@@ -1,1 +1,0 @@
-# Main window layout and interactions
