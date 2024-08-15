@@ -1,5 +1,5 @@
 # Tests for database interactions
-from backend.adp_processor import process_csv
+from backend.processing import process_csv
 from backend.database import DatabaseTable
 
 # Create database table objects for full PPR, half PPR, and standard
@@ -33,7 +33,32 @@ for player in fetched_players_half_ppr[-5:]:
 for player in fetched_players_standard[-5:]:
   print(player)
 
+# Fetch filtered players by QB position - CURRENTLY TRYING TO CALL METHOD ON LIST OF PLAYER OBJECTS, NEED TO CALL METHOD ON PLAYERS OBJECT
+filtered_qbs_full_ppr = players_full_ppr.filter_qbs(full_ppr_table)
+filtered_qbs_half_ppr = players_half_ppr.filter_qbs(half_ppr_table)
+filtered_qbs_standard = players_standard.filter_qbs(standard_table)
+
+# Print filtered players by QB position
+print(filtered_qbs_full_ppr)
+print(filtered_qbs_half_ppr)
+print(filtered_qbs_standard)
+
 # Fetch specific player from each table
+fetched_player_full_ppr = full_ppr_table.fetch_player_by_name('Josh Allen')
+fetched_player_half_ppr = half_ppr_table.fetch_player_by_name('Patrick Mahomes II')
+fetched_player_standard = standard_table.fetch_player_by_name('Lamar Jackson')
+
+# Print specific fetched players
+print(fetched_player_full_ppr)
+print(fetched_player_half_ppr)
+print(fetched_player_standard)
+
+# Delete specific player from each table
+full_ppr_table.remove_player('Josh Allen')
+half_ppr_table.remove_player('Patrick Mahomes II')
+standard_table.remove_player('Lamar Jackson')
+
+# Fetch specific (deleted) player from each table
 fetched_player_full_ppr = full_ppr_table.fetch_player_by_name('Josh Allen')
 fetched_player_half_ppr = half_ppr_table.fetch_player_by_name('Patrick Mahomes II')
 fetched_player_standard = standard_table.fetch_player_by_name('Lamar Jackson')
