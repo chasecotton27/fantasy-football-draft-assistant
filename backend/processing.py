@@ -69,71 +69,24 @@ class CSVFile:
 
 # Define the Draft class
 class Draft:
-    def __init__(self):
-        self.scoring_format = self.set_scoring_format()
-        self.position_count = self.set_position_count()
-        self.drafting_style = self.set_drafting_style()
-
-    # Method to set the scoring format for the league
-    def set_scoring_format(self):
-        scoring_format_enum = input('What is the scoring format for this league?\n\n1) Standard\n2) Half PPR\n3) Full PPR\n\nScoring format (1, 2, or 3): ')
-
-        if int(scoring_format_enum) == 1:
-            scoring_format = 'Standard'
-        elif int(scoring_format_enum) == 2:
-            scoring_format = 'Half PPR'
-        elif int(scoring_format_enum) == 3:
-            scoring_format = 'Full PPR'
-
-        return scoring_format
-
-    # Method to set the position count for each team
-    def set_position_count(self):
-        print('How many players for each position are on a team?\n')
-        qb = int(input('Quarterbacks: '))
-        rb = int(input('Running backs: '))
-        wr = int(input('Wide receivers: '))
-        te = int(input('Tight ends: '))
-        flex = int(input('Flex positions: '))
-        k = int(input('Kickers: '))
-        dst = int(input('Defense and special teams: '))
-        bench = int(input('Bench positions: '))
-
-        position_count = {
-            'Quarterbacks': qb,
-            'Running backs': rb,
-            'Wide receivers': wr,
-            'Tight ends': te,
-            'Flex positions': flex,
-            'Kickers': k,
-            'Defense and special teams:': dst,
-            'Bench positions': bench
-        }
-
-        return position_count
-
-    # Method to set the drafting style for the draft
-    def set_drafting_style(self):
-        drafting_style_enum = input('What is the drafting style for this league?\n\n1) Standard\n2) Snake\n\nDrafting style (1 or 2): ')
-
-        if int(drafting_style_enum) == 1:
-            drafting_style = 'Standard'
-        elif int(drafting_style_enum) == 2:
-            drafting_style = 'Snake'
-
-        return drafting_style
+    def __init__(self, scoring_format, position_count, drafting_style, num_teams):
+        self.scoring_format = scoring_format
+        self.position_count = position_count
+        self.drafting_style = drafting_style
+        self.num_teams = num_teams
 
 # Define the Team class
 class Team:
-    def __init__(self, team_name, db_table):
+    def __init__(self, team_name, draft_position, db_table):
         self.team_name = team_name
+        self.draft_position = draft_position
         self.db_table = db_table
         self.roster = []
 
     # Method to draft a player and add them to a team's roster while removing them from a database table
     def draft_player(self, player_id):
         player = self.db_table.fetch_player(player_id)
-        self.roster.append(player)
+        self.roster.append(player[0])
         self.db_table.remove_player(player_id)
 
 # Define the PlayerBoard class
