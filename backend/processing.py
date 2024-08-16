@@ -125,17 +125,16 @@ class Draft:
 
 # Define the Team class
 class Team:
-    def __init__(self):
-        pass
+    def __init__(self, team_name, db_table):
+        self.team_name = team_name
+        self.db_table = db_table
+        self.roster = []
 
-    def create_team(self):
-        pass
-
-    def delete_team(self):
-        pass
-
-    def draft_player(self):
-        pass
+    # Method to draft a player and add them to a team's roster while removing them from a database table
+    def draft_player(self, player_id):
+        player = self.db_table.fetch_player(player_id)
+        self.roster.append(player)
+        self.db_table.remove_player(player_id)
 
 # Define the PlayerBoard class
 class PlayerBoard:
@@ -227,13 +226,3 @@ class PlayerBoard:
         self.player_count = len(self.players)
 
         return self.players
-
-# Define the Player class
-class Player:
-    def __init__(self, player_id, db_table):
-        player_data = db_table.fetch_player(player_id)
-        (
-            self.player_id, self.rank, self.name, self.team, self.bye,
-            self.position, self.adp_espn, self.adp_yahoo, self.adp_cbs,
-            self.adp_sleeper, self.adp_nfl, self.adp_rtsports, self.avg_adp
-        ) = player_data

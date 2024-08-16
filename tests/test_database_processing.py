@@ -1,5 +1,5 @@
 from backend.database import DatabaseTable
-from backend.processing import CSVFile, Draft, Team, PlayerBoard, Player
+from backend.processing import CSVFile, Draft, Team, PlayerBoard
 
 # Instantiate Draft object to query user for scoring format, position count, and drafting style
 my_draft = Draft()
@@ -73,5 +73,23 @@ for player_board in filtered_player_boards:
       print(player)
       i += 1
 
-# NEED TO FIGURE OUT HOW TO STRUCTURE DRAFT CLASS... I DON'T WANT TO RECEIVE USER INPUT FROM CLI, SO I NEED TO PLAN WHAT USER INTERACTIONS WILL LOOK LIKE
-# NEED TO FIGURE OUT HOW TO INCORPORATE PLAYERS CLASS... I WANT MY_PLAYER_BOARD.PLAYERS TO RETURN A LIST OF PLAYER OBJECTS
+# Instantiate Team object to create a team without players
+my_team = Team('My Team', my_db_table)
+
+# Tests
+print(my_team)
+
+# Draft players and add them to the team's roster while removing them from the database
+my_team.draft_player(2)
+my_team.draft_player(4)
+my_team.draft_player(6)
+my_team.draft_player(8)
+
+# Tests
+for player in my_team.roster:
+  print(player)
+
+# Reset the player board to the entire database of players to confirm the drafted players are removed
+all_players = my_player_board.filter_all_players()
+for player in all_players[:5]:
+  print(player)
