@@ -95,6 +95,7 @@ class PlayerBoard:
         self.db_table = db_table
         self.players = []
         self.player_count = len(self.players)
+        self.filter_all_players()
 
     # Method to erase a player board before fetching from a database table and repopulating a player board
     def erase_player_board(self):
