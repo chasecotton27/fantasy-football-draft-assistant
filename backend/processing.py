@@ -109,14 +109,6 @@ class PlayerBoard:
 
         return self.players
 
-    # Method to populate a player board with a specific player from a database table
-    def filter_player(self, player_id):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_player(player_id)
-        self.player_count = len(self.players)
-
-        return self.players
-
     # Method to populate a player board with all QBs from a database table
     def filter_qbs(self):
         self.erase_player_board()
@@ -161,22 +153,6 @@ class PlayerBoard:
     def filter_dsts(self):
         self.erase_player_board()
         self.players = self.db_table.fetch_dsts()
-        self.player_count = len(self.players)
-
-        return self.players
-
-    # Method to populate a player board with all players on a specific team from a database table
-    def filter_players_from_team(self, team):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_players_from_team(team)
-        self.player_count = len(self.players)
-
-        return self.players
-
-    # Method to populate a player board with all players with a specific bye week from a database table
-    def filter_players_with_bye(self, bye):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_players_with_bye(bye)
         self.player_count = len(self.players)
 
         return self.players

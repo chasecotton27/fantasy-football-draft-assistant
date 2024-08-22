@@ -20,8 +20,7 @@ class DraftSetupFrame(tk.Frame):
         # Position count setup
         self.position_count_label = tk.Label(self, text = 'Enter Position Counts:')
         self.position_count_label.pack(pady = 10)
-        self.positions = ['Quarterbacks', 'Running backs', 'Wide receivers', 'Tight ends', 
-                          'Flex positions', 'Kickers', 'Defense and special teams', 'Bench positions']
+        self.positions = ['QB', 'RB', 'WR', 'TE', 'Flex', 'K', 'D/ST', 'Bench']
         self.position_entries = {}
 
         for position in self.positions:

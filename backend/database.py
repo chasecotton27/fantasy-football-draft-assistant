@@ -59,16 +59,6 @@ class DatabaseTable:
         conn.commit()
         conn.close()
 
-    # Method to fetch a player from a database table
-    def fetch_player(self, player_id):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute(f'SELECT * FROM {self.table_name} WHERE player_id = ?', (player_id,))
-        row = cursor.fetchall()
-        conn.close()
-
-        return row
-
     # Method to fetch all players from a database table
     def fetch_all_players(self):
         conn = sqlite3.connect(self.db_name)
@@ -134,26 +124,6 @@ class DatabaseTable:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute(f'SELECT * FROM {self.table_name} WHERE position LIKE ?', ('%DST%',))
-        rows = cursor.fetchall()
-        conn.close()
-
-        return rows
-
-    # Method to fetch all of a team's players from a database table
-    def fetch_players_from_team(self, team):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute(f'SELECT * FROM {self.table_name} WHERE team = ?', (team,))
-        rows = cursor.fetchall()
-        conn.close()
-
-        return rows
-
-    # Method to fetch all players with a specific bye from a database table
-    def fetch_players_with_bye(self, bye):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        cursor.execute(f'SELECT * FROM {self.table_name} WHERE bye = ?', (bye,))
         rows = cursor.fetchall()
         conn.close()
 
