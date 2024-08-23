@@ -9,15 +9,15 @@ class DraftApp(tk.Tk):
         self.title('Fantasy Football Draft Assistant')
         self.geometry('1200x600')
 
-        # Initialize container for frames
+        # Create container frame
         self.container = tk.Frame(self)
-        self.container.grid(row=0, column=0, sticky='nsew')
+        self.container.grid(row = 0, column = 0, sticky = 'nsew')
 
-        # Make the container grid fill the entire window
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        # Configure the container grid to fill the entire window
+        self.grid_rowconfigure(0, weight = 1)
+        self.grid_columnconfigure(0, weight = 1)
 
-        # Dictionary to hold the frames
+        # Create dictionary to hold the child frames
         self.frames = {}
 
         # Initialize and show the first frame
@@ -27,26 +27,27 @@ class DraftApp(tk.Tk):
         # Create the frame if it doesn't exist
         if frame_class not in self.frames:
             if frame_class == DraftSetupFrame:
-                frame = frame_class(parent=self.container, controller=self)
+                frame = frame_class(parent = self.container, controller = self)
             elif frame_class == TeamSetupFrame:
-                frame = frame_class(parent=self.container, controller=self,
-                                    my_draft=args[0], my_db_table=args[1])
+                frame = frame_class(parent = self.container, controller = self,
+                                    my_draft = args[0], my_db_table = args[1])
             elif frame_class == DraftBoardFrame:
-                frame = frame_class(parent=self.container, controller=self, my_draft=args[0],
-                                    my_db_table=args[1], my_teams=args[2])
+                frame = frame_class(parent = self.container, controller = self, my_draft = args[0],
+                                    my_db_table = args[1], my_teams = args[2])
 
             # Store the frame and configure grid
             self.frames[frame_class] = frame
-            frame.grid(row=0, column=0, sticky='nsew')
+            frame.grid(row = 0, column = 0, sticky = 'nsew')
 
             # Make sure the frame takes up all space in the container
-            self.container.grid_rowconfigure(0, weight=1)
-            self.container.grid_columnconfigure(0, weight=1)
+            self.container.grid_rowconfigure(0, weight = 1)
+            self.container.grid_columnconfigure(0, weight = 1)
 
         # Bring the frame to the front
         frame = self.frames[frame_class]
         frame.tkraise()
 
+# Entry point for the application
 if __name__ == '__main__':
     app = DraftApp()
     app.mainloop()
