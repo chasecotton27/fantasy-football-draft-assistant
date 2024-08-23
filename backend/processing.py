@@ -86,7 +86,7 @@ class Team:
     # Method to draft a player and add them to a team's roster while removing them from a database table
     def draft_player(self, player_id):
         player = self.db_table.fetch_player(player_id)
-        self.roster.append(player[0])
+        self.roster.append(player)
         self.db_table.remove_player(player_id)
 
 # Define the PlayerBoard class

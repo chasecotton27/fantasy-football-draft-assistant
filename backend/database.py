@@ -59,6 +59,26 @@ class DatabaseTable:
         conn.commit()
         conn.close()
 
+    # Method to find a player from a database table
+    def find_player(self, name, team, position):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT * FROM {self.table_name} WHERE name = ? AND team = ? AND position LIKE ?', (name, team, f'%{position}%'))
+        row = cursor.fetchone()
+        conn.close()
+
+        return row
+
+    # Method to fetch a player from a database table
+    def fetch_player(self, player_id):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT * FROM {self.table_name} WHERE player_id = ?', (player_id,))
+        row = cursor.fetchone()
+        conn.close()
+
+        return row
+
     # Method to fetch all players from a database table
     def fetch_all_players(self):
         conn = sqlite3.connect(self.db_name)

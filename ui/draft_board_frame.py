@@ -1,4 +1,5 @@
 import tkinter as tk
+from backend.database import DatabaseTable
 from backend.processing import PlayerBoard
 
 class DraftBoardFrame(tk.Frame):
@@ -107,6 +108,9 @@ class DraftBoardFrame(tk.Frame):
                                 self.draft_order.append(team.team_name)
                                 break
                 forward = not forward
+
+        # Initialize dictionary for draft selections
+        self.draft_selections = {}
 
         # Create scrollable frames
         self.create_scrollable_frame(self.team_roster_frame)
@@ -256,6 +260,8 @@ class DraftBoardFrame(tk.Frame):
             for _ in range(count):
                 player_name = ''
                 for player in current_team.roster:
+                    print(player)
+                    print(type(player))
                     if player[5] ==  position:
                         player_name = player[2]
                         break
@@ -276,7 +282,7 @@ class DraftBoardFrame(tk.Frame):
         self.available_players_scrollable_frame.grid_columnconfigure(0, weight = 1)
         row = 0
 
-        # Create a label for each player
+        # Create a frame for each player
         for player in self.my_player_board.players:
             player_frame = tk.Frame(self.available_players_scrollable_frame, bg = 'lightgrey', pady = 2)
             player_frame.grid(row = row, column = 0, sticky = 'nsew')
@@ -315,10 +321,48 @@ class DraftBoardFrame(tk.Frame):
             avg_adp_label.grid(row = 0, column = 5, sticky = 'nsew')
 
             # Create draft button
-            draft_button = tk.Button(player_frame, text = 'DRAFT', command = self.draft_player)
+            draft_button = tk.Button(player_frame, text = 'DRAFT', command = lambda f = player_frame: self.draft_player(f))
             draft_button.grid(row = 0, column = 6, sticky = 'nsew')
 
             # Increment row to move to the next player
+            row += 1
+
+    def display_draft_history(self):
+        # Clear any existing widgets in the frame
+        for widget in self.draft_history_scrollable_frame.winfo_children():
+            widget.destroy()
+
+        # Configure the grid and initialize row
+        self.draft_history_scrollable_frame.grid_columnconfigure(0, weight = 1)
+        row = 0
+
+        # Create a frame for each selection
+        for team_name, player_name in self.draft_selections.items():
+            selection_frame = tk.Frame(self.draft_history_scrollable_frame, bg = 'lightgrey', pady = 2)
+            selection_frame.grid(row = row, column = 0, sticky = 'nsew')
+
+            # Configure columns for selection frame
+            selection_frame.grid_columnconfigure(0, weight = 1)
+            selection_frame.grid_columnconfigure(1, weight = 1)
+            selection_frame.grid_columnconfigure(2, weight = 1)
+            selection_frame.grid_columnconfigure(3, weight = 1)
+
+            # Create pick number label
+            pick_number = tk.Label(selection_frame, text = str(row + 1), anchor = 'w', font = ('Arial', 8))
+            pick_number.grid(row = 0, column = 0, sticky = 'nsew')
+
+            # Create team name label
+            team_name_label = tk.Label(selection_frame, text = team_name, anchor = 'w', font = ('Arial', 8))
+            team_name_label.grid(row = 0, column = 1, sticky = 'nsew')
+
+            # Create selected label
+            selected_label = tk.Label(selection_frame, text = 'selected', anchor = 'w', font = ('Arial', 8))
+            selected_label.grid(row = 0, column = 2, sticky = 'nsew')
+
+            # Create player name label
+            player_name_label = tk.Label(selection_frame, text = player_name, anchor = 'w', font = ('Arial', 8))
+            player_name_label.grid(row = 0, column = 3, sticky = 'nsew')
+
             row += 1
 
     def show_all(self):
@@ -356,5 +400,26 @@ class DraftBoardFrame(tk.Frame):
         self.my_player_board.players = self.my_player_board.filter_dsts()
         self.display_available_players()
 
-    def draft_player(self):
-        pass
+    def draft_player(self, player_frame):
+        # Identify which team is drafting from draft order list
+        drafting_team_name = self.draft_order[0]
+        # Identify which player frame contians the draft button that was pressed
+        player_data = player_frame.winfo_children()
+        # Use player data from player frame to fetch player from database
+        player = self.my_db_table.find_player(player_data[1].cget('text'), player_data[2].cget('text'), player_data[4].cget('text'))
+        player_id = player[0]
+        # Add player to team's roster, remove player from database table, and add selection entry to dict
+        for team in self.my_teams:
+            if team.team_name == drafting_team_name:
+                team.draft_player(player_id)
+                self.draft_selections[team.team_name] = player[2]
+                break        
+        # Remove first position of draft order list
+        del self.draft_order[0]
+        # Recreate PlayerBoard object
+        self.my_player_board = PlayerBoard(self.my_db_table)
+        # Display draft order, team roster, available players, and draft history frames
+        self.display_draft_order()
+        self.display_team_roster()
+        self.display_available_players()
+        self.display_draft_history()
