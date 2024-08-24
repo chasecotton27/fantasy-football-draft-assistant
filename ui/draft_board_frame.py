@@ -110,7 +110,7 @@ class DraftBoardFrame(tk.Frame):
                 forward = not forward
 
         # Initialize dictionary for draft selections
-        self.draft_selections = {}
+        self.draft_selections = []
 
         # Create scrollable frames
         self.create_scrollable_frame(self.team_roster_frame)
@@ -237,41 +237,40 @@ class DraftBoardFrame(tk.Frame):
 
         # Get the current drafting team
         current_team_name = self.draft_order[0]
-        current_team = None
         for team in self.my_teams:
             if team.team_name ==  current_team_name:
-                current_team = team
+
+                # Track which positions have already been labeled
+                labeled_positions = set()
+                row = 0
+
+                # Display the roster in the team roster frame
+                for position, count in self.my_draft.position_count.items():
+                    # Create a label for the position only once
+                    if position not in labeled_positions:
+                        position_label = tk.Label(self.team_roster_scrollable_frame, text = position, anchor = 'w', font = ('Arial', 8))
+                        position_label.grid(row = row, column = 0, sticky = 'ew', padx = 5, pady = 2)
+                        labeled_positions.add(position)
+                        row += 1
+
+                    # Create labels for the players
+                    labeled_players = set()
+                    for _ in range(count):
+                        player_name = ''
+                        for player in team.roster:
+                            if position in player[5] and player[2] not in labeled_players:
+                                player_name = player[2]
+                                labeled_players.add(player_name)
+                                break
+
+                        # Create label for the player name (empty if not drafted yet)
+                        player_name_label = tk.Label(self.team_roster_scrollable_frame, text = player_name, anchor = 'w', font = ('Arial', 8))
+                        player_name_label.grid(row = row, column = 0, sticky = 'ew', padx = 5, pady = 2)
+
+                        # Increment row to move to the next position/player
+                        row += 1
+
                 break
-
-        # Track which positions have already been labeled
-        labeled_positions = set()
-        row = 0
-
-        # Display the roster in the team roster frame
-        for position, count in self.my_draft.position_count.items():
-            # Create a label for the position only once
-            if position not in labeled_positions:
-                position_label = tk.Label(self.team_roster_scrollable_frame, text = position, anchor = 'w', font = ('Arial', 8))
-                position_label.grid(row = row, column = 0, sticky = 'ew', padx = 5, pady = 2)
-                labeled_positions.add(position)
-                row += 1
-
-            # Create labels for the players
-            for _ in range(count):
-                player_name = ''
-                for player in current_team.roster:
-                    print(player)
-                    print(type(player))
-                    if player[5] ==  position:
-                        player_name = player[2]
-                        break
-
-                # Create label for the player name (empty if not drafted yet)
-                player_name_label = tk.Label(self.team_roster_scrollable_frame, text = player_name, anchor = 'w', font = ('Arial', 8))
-                player_name_label.grid(row = row, column = 0, sticky = 'ew', padx = 5, pady = 2)
-
-                # Increment row to move to the next position/player
-                row += 1
 
     def display_available_players(self):
         # Clear any existing widgets in the frame
@@ -334,12 +333,14 @@ class DraftBoardFrame(tk.Frame):
 
         # Configure the grid and initialize row
         self.draft_history_scrollable_frame.grid_columnconfigure(0, weight = 1)
-        row = 0
+        num_rows = len(self.draft_selections)
+        rows = list(range(num_rows, 0 ,-1))
+        i = 0
 
         # Create a frame for each selection
-        for team_name, player_name in self.draft_selections.items():
+        for selection in reversed(self.draft_selections):
             selection_frame = tk.Frame(self.draft_history_scrollable_frame, bg = 'lightgrey', pady = 2)
-            selection_frame.grid(row = row, column = 0, sticky = 'nsew')
+            selection_frame.grid(row = i, column = 0, sticky = 'nsew')
 
             # Configure columns for selection frame
             selection_frame.grid_columnconfigure(0, weight = 1)
@@ -348,11 +349,11 @@ class DraftBoardFrame(tk.Frame):
             selection_frame.grid_columnconfigure(3, weight = 1)
 
             # Create pick number label
-            pick_number = tk.Label(selection_frame, text = str(row + 1), anchor = 'w', font = ('Arial', 8))
+            pick_number = tk.Label(selection_frame, text = str(rows[i]), anchor = 'w', font = ('Arial', 8))
             pick_number.grid(row = 0, column = 0, sticky = 'nsew')
 
             # Create team name label
-            team_name_label = tk.Label(selection_frame, text = team_name, anchor = 'w', font = ('Arial', 8))
+            team_name_label = tk.Label(selection_frame, text = selection[0], anchor = 'w', font = ('Arial', 8))
             team_name_label.grid(row = 0, column = 1, sticky = 'nsew')
 
             # Create selected label
@@ -360,10 +361,10 @@ class DraftBoardFrame(tk.Frame):
             selected_label.grid(row = 0, column = 2, sticky = 'nsew')
 
             # Create player name label
-            player_name_label = tk.Label(selection_frame, text = player_name, anchor = 'w', font = ('Arial', 8))
+            player_name_label = tk.Label(selection_frame, text = selection[1], anchor = 'w', font = ('Arial', 8))
             player_name_label.grid(row = 0, column = 3, sticky = 'nsew')
 
-            row += 1
+            i += 1
 
     def show_all(self):
         # Filter and update player board with all players
@@ -412,7 +413,7 @@ class DraftBoardFrame(tk.Frame):
         for team in self.my_teams:
             if team.team_name == drafting_team_name:
                 team.draft_player(player_id)
-                self.draft_selections[team.team_name] = player[2]
+                self.draft_selections.append([team.team_name, player[2]])
                 break        
         # Remove first position of draft order list
         del self.draft_order[0]
