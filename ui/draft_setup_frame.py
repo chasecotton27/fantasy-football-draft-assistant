@@ -24,7 +24,7 @@ class DraftSetupFrame(tk.Frame):
         self.position_count_label.pack(pady = 10)
 
         # Initialize list of positions and a dictionary for position entries
-        self.positions = ['QB', 'RB', 'WR', 'TE', 'Flex', 'K', 'D/ST', 'Bench']
+        self.positions = ['QB', 'RB', 'WR', 'TE', 'Flex', 'K', 'DST', 'Bench']
         self.position_entries = {}
 
         for position in self.positions:

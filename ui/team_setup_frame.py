@@ -59,7 +59,7 @@ class TeamSetupFrame(tk.Frame):
         # Create Team objects from input from the user
         for name_var, position_var in zip(self.team_names, self.draft_positions):
             team_var_name = f'team_{str(i)}'
-            team_var_name = Team(name_var.get(), position_var.get(), self.my_db_table)
+            team_var_name = Team(name_var.get(), position_var.get(), self.my_db_table, self.my_draft)
             my_teams.append(team_var_name)
             i +=  1
 

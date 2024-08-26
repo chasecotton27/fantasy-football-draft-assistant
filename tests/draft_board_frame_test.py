@@ -29,7 +29,7 @@ class DraftApp(tk.Tk):
 
 if __name__ == '__main__':
     scoring_format = 'Full PPR'
-    position_count = {'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'Flex': 1, 'K': 1, 'D/ST': 1, 'Bench': 5}
+    position_count = {'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'Flex': 1, 'K': 1, 'DST': 1, 'Bench': 5}
     drafting_style = 'Snake'
     num_teams = 12
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     my_teams = []
 
     for team_name, draft_position in zip(team_names, draft_positions):
-        team  = Team(team_name, draft_position, my_db_table)
+        team  = Team(team_name, draft_position, my_db_table, my_draft)
         my_teams.append(team)
 
     app = DraftApp()

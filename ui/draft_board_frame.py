@@ -109,7 +109,7 @@ class DraftBoardFrame(tk.Frame):
                                 break
                 forward = not forward
 
-        # Initialize dictionary for draft selections
+        # Initialize list for draft selections
         self.draft_selections = []
 
         # Create scrollable frames
