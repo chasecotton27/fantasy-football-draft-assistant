@@ -69,6 +69,16 @@ class DatabaseTable:
 
         return row
 
+    # Method to find the player with the lowest ADP from a database table
+    def find_lowest_adp(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT * FROM {self.table_name} ORDER BY rank LIMIT 1')
+        row = cursor.fetchone()
+        conn.close()
+
+        return row
+
     # Method to fetch a player from a database table
     def fetch_player(self, player_id):
         conn = sqlite3.connect(self.db_name)

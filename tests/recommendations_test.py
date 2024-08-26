@@ -1,7 +1,7 @@
 from backend.database import DatabaseTable
 from backend.processing import CSVFile, Draft, Team, PlayerBoard
 
-# -------------------- SIMULATES HEADLESS STARTING STATE OF DRAFT BOARD FRAME --------------------
+# --------------------- SETUP OF ACTUAL STARTING STATE ----------------------
 
 # Setup from draft_setup_frame
 scoring_format = 'Full PPR'
@@ -36,74 +36,68 @@ for _ in range(16):
         reverse = False
 draft_selections = []
 
-# -------------------- SIMULATES HEADLESS STARTING STATE OF DRAFT BOARD FRAME --------------------
+# -------------------- SETUP OF SIMULATED STARTING STATE --------------------
 
-'''projected_picks_v1 = []
-projected_picks_v2 = []
-projected_picks_v3 = []
+# Setup from draft_setup_frame
+sim_scoring_format = 'Full PPR'
+sim_position_count = {'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'Flex': 1, 'K': 1, 'DST': 1, 'Bench': 7}
+sim_drafting_style = 'Snake'
+sim_num_teams = 12
+sim_my_draft = Draft(sim_scoring_format, sim_position_count, sim_drafting_style, sim_num_teams)
+sim_db_table_name = 'sim_full_ppr_table'
+sim_csv_file_path = 'adp-data/8_11_24_ADP_Rankings_Full_PPR.csv'
+sim_my_db_table = DatabaseTable(sim_db_table_name, 'sim_players.db')
+sim_my_csv_file = CSVFile(sim_csv_file_path, sim_my_db_table)
 
-simulated_roster_team_1 = []
-simulated_roster_team_2 = []
-simulated_roster_team_3 = []
-simulated_roster_team_4 = []
-simulated_roster_team_5 = []
-simulated_roster_team_6 = []
-simulated_roster_team_7 = []
-simulated_roster_team_8 = []
-simulated_roster_team_9 = []
-simulated_roster_team_10 = []
-simulated_roster_team_11 = []
-simulated_roster_team_12 = []'''
+# Setup from team_setup_frame
+sim_my_teams = []
+for i in range(1, sim_my_draft.num_teams + 1):
+    sim_team_name = f'Team_{str(i)}'
+    sim_team = Team(sim_team_name, i, sim_my_db_table, sim_my_draft)
+    sim_my_teams.append(sim_team)
 
-player_id = 1
-for team in my_teams:
-    print()
-    player = my_db_table.fetch_player(player_id)
-    print(f'Before pick: {team.filled_roster_positions}')
-    team.simulate_draft_pick()
-    team.draft_player(player_id)
-    print(f'After pick: {team.filled_roster_positions}')
-    draft_selections.append([team.team_name, player[2]])
-    del draft_order[0]
-    my_player_board = PlayerBoard(my_db_table)
-    player_id += 1
-    print()
-for team in my_teams[::-1]:
-    print()
-    player = my_db_table.fetch_player(player_id)
-    print(f'Before pick: {team.filled_roster_positions}')
-    team.simulate_draft_pick()
-    team.draft_player(player_id)
-    print(f'After pick: {team.filled_roster_positions}')
-    draft_selections.append([team.team_name, player[2]])
-    del draft_order[0]
-    my_player_board = PlayerBoard(my_db_table)
-    player_id += 1
-    print()
-for team in my_teams:
-    print()
-    player = my_db_table.fetch_player(player_id)
-    print(f'Before pick: {team.filled_roster_positions}')
-    team.simulate_draft_pick()
-    team.draft_player(player_id)
-    print(f'After pick: {team.filled_roster_positions}')
-    draft_selections.append([team.team_name, player[2]])
-    del draft_order[0]
-    my_player_board = PlayerBoard(my_db_table)
-    player_id += 1
-    print()
-for team in my_teams[::-1]:
-    print()
-    player = my_db_table.fetch_player(player_id)
-    print(f'Before pick: {team.filled_roster_positions}')
-    team.simulate_draft_pick()
-    team.draft_player(player_id)
-    print(f'After pick: {team.filled_roster_positions}')
-    draft_selections.append([team.team_name, player[2]])
-    del draft_order[0]
-    my_player_board = PlayerBoard(my_db_table)
-    player_id += 1
-    print()
+# Abstracted setup from draft_board_frame
+sim_my_player_board = PlayerBoard(sim_my_db_table)
+sim_draft_order = []
+reverse = False
+for _ in range(16):
+    if not reverse:
+        for sim_team in sim_my_teams:
+            sim_draft_order.append(sim_team.team_name)
+        reverse = True
+    elif reverse:
+        for sim_team in sim_my_teams[::-1]:
+            sim_draft_order.append(sim_team.team_name)
+        reverse = False
+sim_draft_selections = []
+
+# --------------------------- SIMULATE THE DRAFT ----------------------------
+
+# Initialize flag to determine when to stop simulation
+starting_lineup_full = False
+
+# Simulate and print draft picks
+for sim_draft_turn in sim_draft_order:
+    for sim_team in sim_my_teams:
+        if sim_team.team_name == sim_draft_turn:
+            print()
+            print(f'Before pick: {sim_team.filled_roster_positions}')
+            target_player = sim_team.simulate_draft_pick()
+            if target_player == None:
+                starting_lineup_full = True
+                break
+            print(target_player)
+            sim_team.draft_player(target_player[0])
+            print(f'After pick: {sim_team.filled_roster_positions}')
+            sim_draft_selections.append([sim_team.team_name, target_player[2]])
+            sim_my_player_board = PlayerBoard(sim_my_db_table)
+            print()
+            break
+    # Check if starting lineup is full to determine whether to continue
+    if starting_lineup_full:
+        break
 
 # I NOW HAVE TEAM.FILLED_ROSTER_POSITIONS AND TEAM.REQUIRED_ROSTER_POSITIONS TO WORK WITH
-# I ALSO HAVE SIMULATE_DRAFT_PICK(), WHICH AS OF NOW PRINTS THE TARGET PLAYER POSITIONS FOR THE DRAFTING TEAM
+# I ALSO HAVE SIMULATE_DRAFT_PICK(), WHICH RETURNS THE TARGET PLAYER FOR THE DRAFTING TEAM
+# I AM NOW ABLE TO SIMULATE THE ENTIRE DRAFT
+# NOW NEED TO FIGURE OUT HOW TO USE THE SIMULATION DATA TO PREDICT FUTURE STATE OF PLAYERBOARD AND PROVIDE RECOMMENDATIONS

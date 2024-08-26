@@ -188,12 +188,48 @@ class Team:
             elif not qbs_needed and not rbs_needed and not wrs_needed and not tes_needed and dsts_needed > ks_needed:
                 target_positions.append('DST')
 
-        '''top_20_available_players = self.db_table.fetch_all_players()[0:20]
+        top_20_available_players = self.db_table.fetch_all_players()[0:20]
+        target_player = []
 
         for player in top_20_available_players:
-            pass'''
-        
-        print(target_positions)
+            player_position_rank = player[5]
+            player_position = ''.join([char for char in player_position_rank if char.isalpha()])
+
+            if player_position in target_positions:
+                target_player = player
+                break
+
+        if not target_player:
+            target_player_board = []
+            for position in target_positions:
+                if position == 'QB':
+                    available_qbs = self.db_table.fetch_qbs()
+                    target_player_board.append(available_qbs)
+                if position == 'RB':
+                    available_rbs = self.db_table.fetch_rbs()
+                    target_player_board.append(available_rbs)
+                if position == 'WR':
+                    available_wrs = self.db_table.fetch_wrs()
+                    target_player_board.append(available_wrs)
+                if position == 'TE':
+                    available_tes = self.db_table.fetch_tes()
+                    target_player_board.append(available_tes)
+                if position == 'K':
+                    available_ks = self.db_table.fetch_ks()
+                    target_player_board.append(available_ks)
+                if position == 'DST':
+                    available_dsts = self.db_table.fetch_dsts()
+                    target_player_board.append(available_dsts)
+
+            flattened_target_player_board = [player for positional_player_board in target_player_board for player in positional_player_board]
+            sorted_target_player_board = sorted(flattened_target_player_board, key = lambda x: x[1])
+
+            try:
+                target_player = sorted_target_player_board[0]
+            except:
+                target_player = self.db_table.find_lowest_adp()
+
+        return target_player
 
 # Define the PlayerBoard class
 class PlayerBoard:
