@@ -85,7 +85,7 @@ class DraftSetupFrame(tk.Frame):
         my_db_table = DatabaseTable(db_table_name)
 
         # Create CSVFile object (no need to store as a variable)
-        CSVFile(csv_file_path, my_db_table)
+        my_csv_file = CSVFile(csv_file_path, my_db_table)
 
         # Show next frame after completing draft setup
-        self.controller.show_frame(TeamSetupFrame, my_draft, my_db_table)
+        self.controller.show_frame(TeamSetupFrame, my_draft, my_db_table, my_csv_file)

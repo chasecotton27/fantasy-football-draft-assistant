@@ -15,11 +15,11 @@ class DraftApp(tk.Tk):
         self.grid_rowconfigure(0, weight = 1)
         self.grid_columnconfigure(0, weight = 1)
 
-        self.show_frame(DraftBoardFrame, my_draft, my_db_table, my_teams)
+        self.show_frame(DraftBoardFrame, my_draft, my_db_table, my_csv_file, my_teams)
 
     def show_frame(self, frame_class, *args):
         frame = frame_class(parent = self.container, controller = self, my_draft = args[0],
-                            my_db_table = args[1], my_teams = args[2])
+                            my_db_table = args[1], my_csv_file = args[2], my_teams = args[3])
         frame.grid(row = 0, column = 0, sticky = 'nsew')
 
         self.container.grid_rowconfigure(0, weight = 1)
@@ -29,13 +29,13 @@ class DraftApp(tk.Tk):
 
 if __name__ == '__main__':
     scoring_format = 'Full PPR'
-    position_count = {'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'Flex': 1, 'K': 1, 'DST': 1, 'Bench': 5}
+    position_count = {'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'Flex': 1, 'K': 1, 'DST': 1, 'Bench': 7}
     drafting_style = 'Snake'
     num_teams = 12
 
     my_draft = Draft(scoring_format, position_count, drafting_style, num_teams)
     my_db_table = DatabaseTable('full_ppr_table')
-    CSVFile('adp-data/8_11_24_ADP_Rankings_Full_PPR.csv', my_db_table)
+    my_csv_file = CSVFile('adp-data/8_11_24_ADP_Rankings_Full_PPR.csv', my_db_table)
 
     team_names = ['Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5', 'Team 6', 'Team 7', 'Team 8',
                 'Team 9', 'Team 10', 'Team 11', 'Team 12']

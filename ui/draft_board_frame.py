@@ -1,13 +1,15 @@
 import tkinter as tk
 from backend.database import DatabaseTable
 from backend.processing import PlayerBoard
+from backend.recommendations import Simulation
 
 class DraftBoardFrame(tk.Frame):
-    def __init__(self, parent, controller, my_draft, my_db_table, my_teams):
+    def __init__(self, parent, controller, my_draft, my_db_table, my_csv_file, my_teams):
         super().__init__(parent)
         self.controller = controller
         self.my_draft = my_draft
         self.my_db_table = my_db_table
+        self.my_csv_file = my_csv_file
         self.my_teams = my_teams
 
         # Create PlayerBoard object
@@ -361,7 +363,7 @@ class DraftBoardFrame(tk.Frame):
             selected_label.grid(row = 0, column = 2, sticky = 'nsew')
 
             # Create player name label
-            player_name_label = tk.Label(selection_frame, text = selection[1], anchor = 'w', font = ('Arial', 8))
+            player_name_label = tk.Label(selection_frame, text = selection[2], anchor = 'w', font = ('Arial', 8))
             player_name_label.grid(row = 0, column = 3, sticky = 'nsew')
 
             i += 1
@@ -413,14 +415,28 @@ class DraftBoardFrame(tk.Frame):
         for team in self.my_teams:
             if team.team_name == drafting_team_name:
                 team.draft_player(player_id)
-                self.draft_selections.append([team.team_name, player[2]])
-                break        
+                self.draft_selections.append([team.team_name, player[0], player[2]])
+                break
         # Remove first position of draft order list
         del self.draft_order[0]
         # Recreate PlayerBoard object
         self.my_player_board = PlayerBoard(self.my_db_table)
+        # SIMULATIONS
+        my_sim = Simulation(self.my_teams, self.my_player_board, self.draft_order)
+        recommended_player = my_sim.recommend_player()
+        picks_to_sim_next_pick = my_sim.determine_picks_to_sim(1)
+        picks_to_sim_two_picks = my_sim.determine_picks_to_sim(2)
+        available_players_next_pick = my_sim.predict_available_players(picks_to_sim_next_pick)
+        available_players_two_picks = my_sim.predict_available_players(picks_to_sim_two_picks)
+        recommended_players_next_pick = my_sim.recommend_future_players(available_players_next_pick)
+        recommended_players_two_picks = my_sim.recommend_future_players(available_players_two_picks)
+        print(recommended_player)
+        print(recommended_players_next_pick)
+        print(recommended_players_two_picks)
         # Display draft order, team roster, available players, and draft history frames
         self.display_draft_order()
         self.display_team_roster()
         self.display_available_players()
         self.display_draft_history()
+
+# SIMULATION IS WORKING IN RECOMMENDATIONS_TEST_V2 BUT NOT WORKING HERE :(

@@ -3,11 +3,12 @@ from backend.processing import Team
 from ui.draft_board_frame import DraftBoardFrame
 
 class TeamSetupFrame(tk.Frame):
-    def __init__(self, parent, controller, my_draft, my_db_table):
+    def __init__(self, parent, controller, my_draft, my_db_table, my_csv_file):
         super().__init__(parent)
         self.controller = controller
         self.my_draft = my_draft
         self.my_db_table = my_db_table
+        self.my_csv_file = my_csv_file
 
         # Create title label
         self.title_label = tk.Label(self, text = 'Team Setup', font = ('Arial', 14))

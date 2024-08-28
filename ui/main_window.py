@@ -30,10 +30,10 @@ class DraftApp(tk.Tk):
                 frame = frame_class(parent = self.container, controller = self)
             elif frame_class == TeamSetupFrame:
                 frame = frame_class(parent = self.container, controller = self,
-                                    my_draft = args[0], my_db_table = args[1])
+                                    my_draft = args[0], my_db_table = args[1], my_csv_file = args[2])
             elif frame_class == DraftBoardFrame:
                 frame = frame_class(parent = self.container, controller = self, my_draft = args[0],
-                                    my_db_table = args[1], my_teams = args[2])
+                                    my_db_table = args[1], my_csv_file = args[2], my_teams = args[3])
 
             # Store the frame and configure grid
             self.frames[frame_class] = frame
