@@ -6,6 +6,22 @@ class Simulation:
         self.my_playerboard = my_playerboard
         self.draft_order = draft_order
 
+    def check_if_starting_lineup_incomplete(self):
+        team_found = False
+        starting_lineup_incomplete = False
+
+        for team in self.my_teams:
+            if team.team_name == self.draft_order[0]:
+                team_found = True
+                for position in team.required_roster_positions:
+                    if position != 'Bench':
+                        starting_lineup_incomplete = True
+                        break
+            if team_found:
+                break
+
+        return starting_lineup_incomplete
+
     def recommend_player(self):
         teams = copy.deepcopy(self.my_teams)
         drafting_team = self.draft_order[0]

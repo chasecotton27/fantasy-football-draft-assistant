@@ -107,8 +107,14 @@ class Team:
         # Update required roster positions
         if player_position in self.required_roster_positions:
             self.required_roster_positions.remove(player_position)
-        elif player_position not in self.required_roster_positions and (player_position == 'RB' or player_position == 'WR' or player_position == 'TE') and 'Flex' in self.required_roster_positions:
+        elif player_position == 'RB' and player_position not in self.required_roster_positions and 'Flex' in self.required_roster_positions:
             self.required_roster_positions.remove('Flex')
+        elif player_position == 'WR' and player_position not in self.required_roster_positions and 'Flex' in self.required_roster_positions:
+            self.required_roster_positions.remove('Flex')
+        elif player_position == 'TE' and player_position not in self.required_roster_positions and 'Flex' in self.required_roster_positions:
+            self.required_roster_positions.remove('Flex')
+        else:
+            self.required_roster_positions.remove('Bench')
 
     def determine_target_positions(self):
         # Check how many players are needed for each position

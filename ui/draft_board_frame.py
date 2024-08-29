@@ -23,6 +23,7 @@ class DraftBoardFrame(tk.Frame):
         self.grid_rowconfigure(4, weight = 1)
         self.grid_rowconfigure(5, weight = 0)
         self.grid_rowconfigure(6, weight = 0)
+        self.grid_rowconfigure(7, weight = 0)
 
         # Configure columns for main frame
         self.grid_columnconfigure(0, weight = 1)
@@ -77,9 +78,13 @@ class DraftBoardFrame(tk.Frame):
         self.recommendations_title_frame = tk.Frame(self, bg = 'lightgreen')
         self.recommendations_title_frame.grid(row = 5, column = 0, columnspan = 3, sticky = 'nsew')
 
+        # Create recommendations round frame
+        self.recommendations_round_frame = tk.Frame(self, bg = 'lightcoral')
+        self.recommendations_round_frame.grid(row = 6, column = 0, columnspan = 3, sticky = 'nsew')
+
         # Create recommendations frame
         self.recommendations_frame = tk.Frame(self, bg = 'lightcoral')
-        self.recommendations_frame.grid(row = 6, column = 0, columnspan = 3, sticky = 'nsew')
+        self.recommendations_frame.grid(row = 7, column = 0, columnspan = 3, sticky = 'nsew')
 
         # Initialize list of team names in their drafting order
         self.draft_order = []
@@ -212,6 +217,12 @@ class DraftBoardFrame(tk.Frame):
         recommendations_title_label = tk.Label(self.recommendations_title_frame, text = 'Recommendations', font = ('Arial', 12))
         recommendations_title_label.grid(row = 0, column = 0, sticky = 'nsew')
 
+        # Create recommendations round frame and create labels
+        recommendation_texts = ['Recommended Pick', 'Predicted Availability Next Pick', 'Predicted Availability in Two Picks']
+        for i in range(3):
+            self.recommendations_round_frame.grid_columnconfigure(i, weight = 1)
+            tk.Label(self.recommendations_round_frame, text = recommendation_texts[i], font = ('Arial', 8)).grid(row = 0, column = i, sticky = 'nsew')
+
     def display_draft_order(self):
         # Clear any existing widgets in the frame
         for widget in self.draft_order_frame.winfo_children():
@@ -244,6 +255,8 @@ class DraftBoardFrame(tk.Frame):
 
                 # Track which positions have already been labeled
                 labeled_positions = set()
+                labeled_players = set()
+                filled_positions = []
                 row = 0
 
                 # Display the roster in the team roster frame
@@ -256,14 +269,50 @@ class DraftBoardFrame(tk.Frame):
                         row += 1
 
                     # Create labels for the players
-                    labeled_players = set()
                     for _ in range(count):
                         player_name = ''
                         for player in team.roster:
                             if position in player[5] and player[2] not in labeled_players:
                                 player_name = player[2]
                                 labeled_players.add(player_name)
+                                filled_positions.append(position)
                                 break
+                            elif position == 'Flex' and player[2] not in labeled_players:
+                                rb_count = filled_positions.count('RB')
+                                wr_count = filled_positions.count('WR')
+                                te_count = filled_positions.count('TE')
+                                if 'RB' in player[5] and rb_count == self.my_draft.position_count['RB'] and self.my_draft.position_count['Flex'] >= 1:
+                                    player_name = player[2]
+                                    labeled_players.add(player_name)
+                                    filled_positions.append(position)
+                                    break
+                                elif 'WR' in player[5] and wr_count == self.my_draft.position_count['WR'] and self.my_draft.position_count['Flex'] >= 1:
+                                    player_name = player[2]
+                                    labeled_players.add(player_name)
+                                    filled_positions.append(position)
+                                    break
+                                elif 'TE' in player[5] and te_count == self.my_draft.position_count['TE'] and self.my_draft.position_count['Flex'] >= 1:
+                                    player_name = player[2]
+                                    labeled_players.add(player_name)
+                                    filled_positions.append(position)
+                                    break
+                            elif position == 'Bench' and player[2] not in labeled_players:
+                                qb_count = filled_positions.count('QB')
+                                rb_count = filled_positions.count('RB')
+                                wr_count = filled_positions.count('WR')
+                                te_count = filled_positions.count('TE')
+                                flex_count = filled_positions.count('Flex')
+                                k_count = filled_positions.count('K')
+                                dst_count = filled_positions.count('DST')
+                                if (('QB' in player[5] and qb_count == self.my_draft.position_count['QB']) or ('RB' in player[5] and rb_count == self.my_draft.position_count['RB'] and flex_count == self.my_draft.position_count['Flex'])
+                                    or ('WR' in player[5] and wr_count == self.my_draft.position_count['WR'] and flex_count == self.my_draft.position_count['Flex'])
+                                    or ('TE' in player[5] and te_count == self.my_draft.position_count['TE'] and flex_count == self.my_draft.position_count['Flex'])
+                                    or (('RB' in player[5] or 'WR' in player[5] or 'TE' in player[5]) and flex_count == self.my_draft.position_count['Flex'])
+                                    or ('K' in player[5] and k_count == self.my_draft.position_count['K']) or ('DST' in player[5] and dst_count == self.my_draft.position_count['DST'])):
+                                    player_name = player[2]
+                                    labeled_players.add(player_name)
+                                    filled_positions.append(position)
+                                    break
 
                         # Create label for the player name (empty if not drafted yet)
                         player_name_label = tk.Label(self.team_roster_scrollable_frame, text = player_name, anchor = 'w', font = ('Arial', 8))
@@ -368,6 +417,39 @@ class DraftBoardFrame(tk.Frame):
 
             i += 1
 
+    def display_recommendations(self):
+        # Clear any existing widgets in the frame
+        for widget in self.recommendations_frame.winfo_children():
+            widget.destroy()
+
+        for i in range(3):
+            self.recommendations_frame.grid_columnconfigure(i, weight = 1)
+            if i == 0:
+                recommended_player = tk.Label(self.recommendations_frame, text = self.recommended_player[2], font = ('Arial', 8))
+                recommended_player.grid(row = 0, column = 0, sticky = 'nsew')
+            elif i == 1:
+                recommended_next_round_1 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[0][2], font = ('Arial', 8))
+                recommended_next_round_1.grid(row = 0, column = 1, sticky = 'nsew')
+                recommended_next_round_2 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[1][2], font = ('Arial', 8))
+                recommended_next_round_2.grid(row = 1, column = 1, sticky = 'nsew')
+                recommended_next_round_3 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[2][2], font = ('Arial', 8))
+                recommended_next_round_3.grid(row = 2, column = 1, sticky = 'nsew')
+                recommended_next_round_4 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[3][2], font = ('Arial', 8))
+                recommended_next_round_4.grid(row = 3, column = 1, sticky = 'nsew')
+                recommended_next_round_5 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[4][2], font = ('Arial', 8))
+                recommended_next_round_5.grid(row = 4, column = 1, sticky = 'nsew')
+            elif i == 2:
+                recommended_two_rounds_1 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[0][2], font = ('Arial', 8))
+                recommended_two_rounds_1.grid(row = 0, column = 2, sticky = 'nsew')
+                recommended_two_rounds_2 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[1][2], font = ('Arial', 8))
+                recommended_two_rounds_2.grid(row = 1, column = 2, sticky = 'nsew')
+                recommended_two_rounds_3 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[2][2], font = ('Arial', 8))
+                recommended_two_rounds_3.grid(row = 2, column = 2, sticky = 'nsew')
+                recommended_two_rounds_4 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[3][2], font = ('Arial', 8))
+                recommended_two_rounds_4.grid(row = 3, column = 2, sticky = 'nsew')
+                recommended_two_rounds_5 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[4][2], font = ('Arial', 8))
+                recommended_two_rounds_5.grid(row = 4, column = 2, sticky = 'nsew')
+
     def show_all(self):
         # Filter and update player board with all players
         self.my_player_board.players = self.my_player_board.filter_all_players()
@@ -423,20 +505,36 @@ class DraftBoardFrame(tk.Frame):
         self.my_player_board = PlayerBoard(self.my_db_table)
         # SIMULATIONS
         my_sim = Simulation(self.my_teams, self.my_player_board, self.draft_order)
-        recommended_player = my_sim.recommend_player()
-        picks_to_sim_next_pick = my_sim.determine_picks_to_sim(1)
-        picks_to_sim_two_picks = my_sim.determine_picks_to_sim(2)
-        available_players_next_pick = my_sim.predict_available_players(picks_to_sim_next_pick)
-        available_players_two_picks = my_sim.predict_available_players(picks_to_sim_two_picks)
-        recommended_players_next_pick = my_sim.recommend_future_players(available_players_next_pick)
-        recommended_players_two_picks = my_sim.recommend_future_players(available_players_two_picks)
-        print(recommended_player)
-        print(recommended_players_next_pick)
-        print(recommended_players_two_picks)
+        starting_lineup_incomplete = my_sim.check_if_starting_lineup_incomplete()
+        if starting_lineup_incomplete:
+            self.recommended_player = my_sim.recommend_player()
+            picks_to_sim_next_pick = my_sim.determine_picks_to_sim(1)
+            picks_to_sim_two_picks = my_sim.determine_picks_to_sim(2)
+            available_players_next_pick = my_sim.predict_available_players(picks_to_sim_next_pick)
+            available_players_two_picks = my_sim.predict_available_players(picks_to_sim_two_picks)
+            self.recommended_players_next_pick = my_sim.recommend_future_players(available_players_next_pick)
+            self.recommended_players_two_picks = my_sim.recommend_future_players(available_players_two_picks)
         # Display draft order, team roster, available players, and draft history frames
         self.display_draft_order()
         self.display_team_roster()
         self.display_available_players()
         self.display_draft_history()
+        self.display_recommendations()
 
-# SIMULATION IS WORKING IN RECOMMENDATIONS_TEST_V2 BUT NOT WORKING HERE :(
+    # DRAFT RECOMMENDATIONS ARE FOLLOWING A VERY STRICT PATTERN PER ROUND...
+        # RB OR WR IN FIRST AND SECOND ROUNDS
+        # RB, WR, QB, OR TE IN THIRD AND FOURTH ROUNDS
+            # QB AND TE ARE RELATIVELY RARE FOR THIRD AND FOURTH ROUNDS
+        # QB OR TE IN FIFTH AND SIXTH ROUNDS
+            # IF QB OR TE IS ALREADY FILLED, THEN RB OR WR IS DRAFTED
+            # IN SIXTH ROUND, PLAYERS ARE REACHING FOR HIGH ADP TE OPTIONS
+        # FLEX IN SEVENTH ROUND
+            # IN SEVENTH ROUND, THERE ARE MANY LOW ADP WR OPTIONS ON THE BOARD THAT SHOULDN'T BE
+        # K OR DST IN EIGHTH AND NINTH ROUNDS
+            # K AND DST ARE TAKEN WAY BEFORE THEIR ADP
+        # BENCH PLAYERS IN REMAINING ROUNDS
+    # ERROR IS OCCURING IN NINTH ROUND RELATED TO NONE VALUES ASSIGNED TO RECOMMENDED PLAYERS
+    # RECOMMENDATIONS GET VERY GLITCHY AROUND THE NINTH ROUND
+        # THE DRAFT BUTTON RETURNS ERRORS SAYING THAT PLAYER IS NOT ITERABLE IN RECOMMEND_FUTURE_PLAYERS
+        # CLICKING THE DRAFT BUTTON WILL DELETE THE PLAYER FROM THE DATABASE, BUT NOT SHOW RECOMMENDATIONS
+        # CLICKING THE DRAFT BUTTON MIGHT ALSO ADD THE PLAYER TO THE ROSTER, BUT NOT BE REFLECTED EVERYWHERE
