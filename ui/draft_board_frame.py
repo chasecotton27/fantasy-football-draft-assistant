@@ -1,5 +1,4 @@
 import tkinter as tk
-from backend.database import DatabaseTable
 from backend.processing import PlayerBoard
 from backend.recommendations import Simulation
 
@@ -428,26 +427,26 @@ class DraftBoardFrame(tk.Frame):
                 recommended_player = tk.Label(self.recommendations_frame, text = self.recommended_player[2], font = ('Arial', 8))
                 recommended_player.grid(row = 0, column = 0, sticky = 'nsew')
             elif i == 1:
-                recommended_next_round_1 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[0][2], font = ('Arial', 8))
+                recommended_next_round_1 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_round[0][2], font = ('Arial', 8))
                 recommended_next_round_1.grid(row = 0, column = 1, sticky = 'nsew')
-                recommended_next_round_2 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[1][2], font = ('Arial', 8))
+                recommended_next_round_2 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_round[1][2], font = ('Arial', 8))
                 recommended_next_round_2.grid(row = 1, column = 1, sticky = 'nsew')
-                recommended_next_round_3 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[2][2], font = ('Arial', 8))
+                recommended_next_round_3 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_round[2][2], font = ('Arial', 8))
                 recommended_next_round_3.grid(row = 2, column = 1, sticky = 'nsew')
-                recommended_next_round_4 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[3][2], font = ('Arial', 8))
+                recommended_next_round_4 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_round[3][2], font = ('Arial', 8))
                 recommended_next_round_4.grid(row = 3, column = 1, sticky = 'nsew')
-                recommended_next_round_5 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_pick[4][2], font = ('Arial', 8))
+                recommended_next_round_5 = tk.Label(self.recommendations_frame, text = self.recommended_players_next_round[4][2], font = ('Arial', 8))
                 recommended_next_round_5.grid(row = 4, column = 1, sticky = 'nsew')
             elif i == 2:
-                recommended_two_rounds_1 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[0][2], font = ('Arial', 8))
+                recommended_two_rounds_1 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_rounds[0][2], font = ('Arial', 8))
                 recommended_two_rounds_1.grid(row = 0, column = 2, sticky = 'nsew')
-                recommended_two_rounds_2 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[1][2], font = ('Arial', 8))
+                recommended_two_rounds_2 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_rounds[1][2], font = ('Arial', 8))
                 recommended_two_rounds_2.grid(row = 1, column = 2, sticky = 'nsew')
-                recommended_two_rounds_3 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[2][2], font = ('Arial', 8))
+                recommended_two_rounds_3 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_rounds[2][2], font = ('Arial', 8))
                 recommended_two_rounds_3.grid(row = 2, column = 2, sticky = 'nsew')
-                recommended_two_rounds_4 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[3][2], font = ('Arial', 8))
+                recommended_two_rounds_4 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_rounds[3][2], font = ('Arial', 8))
                 recommended_two_rounds_4.grid(row = 3, column = 2, sticky = 'nsew')
-                recommended_two_rounds_5 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_picks[4][2], font = ('Arial', 8))
+                recommended_two_rounds_5 = tk.Label(self.recommendations_frame, text = self.recommended_players_two_rounds[4][2], font = ('Arial', 8))
                 recommended_two_rounds_5.grid(row = 4, column = 2, sticky = 'nsew')
 
     def show_all(self):
@@ -505,36 +504,13 @@ class DraftBoardFrame(tk.Frame):
         self.my_player_board = PlayerBoard(self.my_db_table)
         # SIMULATIONS
         my_sim = Simulation(self.my_teams, self.my_player_board, self.draft_order)
-        starting_lineup_incomplete = my_sim.check_if_starting_lineup_incomplete()
-        if starting_lineup_incomplete:
-            self.recommended_player = my_sim.recommend_player()
-            picks_to_sim_next_pick = my_sim.determine_picks_to_sim(1)
-            picks_to_sim_two_picks = my_sim.determine_picks_to_sim(2)
-            available_players_next_pick = my_sim.predict_available_players(picks_to_sim_next_pick)
-            available_players_two_picks = my_sim.predict_available_players(picks_to_sim_two_picks)
-            self.recommended_players_next_pick = my_sim.recommend_future_players(available_players_next_pick)
-            self.recommended_players_two_picks = my_sim.recommend_future_players(available_players_two_picks)
+        self.recommended_player = my_sim.recommend_player(self.my_player_board.players, self.draft_order[0])
+        recommended_future_players = my_sim.recommend_future_players()
+        self.recommended_players_next_round = recommended_future_players[0]
+        self.recommended_players_two_rounds = recommended_future_players[1]
         # Display draft order, team roster, available players, and draft history frames
         self.display_draft_order()
         self.display_team_roster()
         self.display_available_players()
         self.display_draft_history()
         self.display_recommendations()
-
-    # DRAFT RECOMMENDATIONS ARE FOLLOWING A VERY STRICT PATTERN PER ROUND...
-        # RB OR WR IN FIRST AND SECOND ROUNDS
-        # RB, WR, QB, OR TE IN THIRD AND FOURTH ROUNDS
-            # QB AND TE ARE RELATIVELY RARE FOR THIRD AND FOURTH ROUNDS
-        # QB OR TE IN FIFTH AND SIXTH ROUNDS
-            # IF QB OR TE IS ALREADY FILLED, THEN RB OR WR IS DRAFTED
-            # IN SIXTH ROUND, PLAYERS ARE REACHING FOR HIGH ADP TE OPTIONS
-        # FLEX IN SEVENTH ROUND
-            # IN SEVENTH ROUND, THERE ARE MANY LOW ADP WR OPTIONS ON THE BOARD THAT SHOULDN'T BE
-        # K OR DST IN EIGHTH AND NINTH ROUNDS
-            # K AND DST ARE TAKEN WAY BEFORE THEIR ADP
-        # BENCH PLAYERS IN REMAINING ROUNDS
-    # ERROR IS OCCURING IN NINTH ROUND RELATED TO NONE VALUES ASSIGNED TO RECOMMENDED PLAYERS
-    # RECOMMENDATIONS GET VERY GLITCHY AROUND THE NINTH ROUND
-        # THE DRAFT BUTTON RETURNS ERRORS SAYING THAT PLAYER IS NOT ITERABLE IN RECOMMEND_FUTURE_PLAYERS
-        # CLICKING THE DRAFT BUTTON WILL DELETE THE PLAYER FROM THE DATABASE, BUT NOT SHOW RECOMMENDATIONS
-        # CLICKING THE DRAFT BUTTON MIGHT ALSO ADD THE PLAYER TO THE ROSTER, BUT NOT BE REFLECTED EVERYWHERE
