@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from backend.processing import PlayerBoard
 from backend.recommendations import Simulation
 
@@ -11,117 +12,67 @@ class DraftBoardFrame(tk.Frame):
         self.my_csv_file = my_csv_file
         self.my_teams = my_teams
 
-        # Create PlayerBoard object
+        # Create PlayerBoard object once, reuse for filtering
         self.my_player_board = PlayerBoard(my_db_table)
 
-        # Configure rows for main frame
-        self.grid_rowconfigure(0, weight = 0)
-        self.grid_rowconfigure(1, weight = 0)
-        self.grid_rowconfigure(2, weight = 0)
-        self.grid_rowconfigure(3, weight = 0)
-        self.grid_rowconfigure(4, weight = 1)
-        self.grid_rowconfigure(5, weight = 0)
-        self.grid_rowconfigure(6, weight = 0)
-        self.grid_rowconfigure(7, weight = 0)
+        # Configure rows and columns for main frame (unchanged)
+        for i in range(8):
+            self.grid_rowconfigure(i, weight=1 if i == 4 else 0)
+        for i in range(3):
+            self.grid_columnconfigure(i, weight=2 if i == 1 else 1)
 
-        # Configure columns for main frame
-        self.grid_columnconfigure(0, weight = 1)
-        self.grid_columnconfigure(1, weight = 2)
-        self.grid_columnconfigure(2, weight = 1)
+        # Create frames (unchanged)
+        self.title_frame = tk.Frame(self, bg='lightcoral')
+        self.title_frame.grid(row=0, column=0, columnspan=3, sticky='nsew')
+        self.draft_order_frame = tk.Frame(self, bg='lightgreen')
+        self.draft_order_frame.grid(row=1, column=0, columnspan=3, sticky='nsew')
+        self.team_roster_title_frame = tk.Frame(self, bg='lightcoral')
+        self.team_roster_title_frame.grid(row=2, column=0, sticky='nsew')
+        self.player_filters_frame = tk.Frame(self, bg='lightcoral')
+        self.player_filters_frame.grid(row=2, column=1, sticky='nsew')
+        self.draft_history_title_frame = tk.Frame(self, bg='lightcoral')
+        self.draft_history_title_frame.grid(row=2, column=2, sticky='nsew')
+        self.team_name_frame = tk.Frame(self, bg='lightgreen')
+        self.team_name_frame.grid(row=3, column=0, sticky='nsew')
+        self.column_titles_frame = tk.Frame(self, bg='lightgreen')
+        self.column_titles_frame.grid(row=3, column=1, sticky='nsew')
+        self.league_name_frame = tk.Frame(self, bg='lightgreen')
+        self.league_name_frame.grid(row=3, column=2, sticky='nsew')
+        self.team_roster_frame = tk.Frame(self, bg='lightcoral', width=300)
+        self.team_roster_frame.grid(row=4, column=0, sticky='nsew')
+        self.available_players_frame = tk.Frame(self, bg='lightcoral', width=600)
+        self.available_players_frame.grid(row=4, column=1, sticky='nsew')
+        self.draft_history_frame = tk.Frame(self, bg='lightcoral', width=300)
+        self.draft_history_frame.grid(row=4, column=2, sticky='nsew')
+        self.recommendations_title_frame = tk.Frame(self, bg='lightgreen')
+        self.recommendations_title_frame.grid(row=5, column=0, columnspan=3, sticky='nsew')
+        self.recommendations_round_frame = tk.Frame(self, bg='lightcoral')
+        self.recommendations_round_frame.grid(row=6, column=0, columnspan=3, sticky='nsew')
+        self.recommendations_frame = tk.Frame(self, bg='lightcoral')
+        self.recommendations_frame.grid(row=7, column=0, columnspan=3, sticky='nsew')
 
-        # Create title frame
-        self.title_frame = tk.Frame(self, bg = 'lightcoral')
-        self.title_frame.grid(row = 0, column = 0, columnspan = 3, sticky = 'nsew')
-
-        # Create draft order frame
-        self.draft_order_frame = tk.Frame(self, bg = 'lightgreen')
-        self.draft_order_frame.grid(row = 1, column = 0, columnspan = 3, sticky = 'nsew')
-
-        # Create team roster frame
-        self.team_roster_title_frame = tk.Frame(self, bg = 'lightcoral')
-        self.team_roster_title_frame.grid(row = 2, column = 0, sticky = 'nsew')
-
-        # Create player filters frame
-        self.player_filters_frame = tk.Frame(self, bg = 'lightcoral')
-        self.player_filters_frame.grid(row = 2, column = 1, sticky = 'nsew')
-
-        # Create draft history title frame
-        self.draft_history_title_frame = tk.Frame(self, bg = 'lightcoral')
-        self.draft_history_title_frame.grid(row = 2, column = 2, sticky = 'nsew')
-
-        # Create team name frame
-        self.team_name_frame = tk.Frame(self, bg = 'lightgreen')
-        self.team_name_frame.grid(row = 3, column = 0, sticky = 'nsew')
-
-        # Create column titles frame
-        self.column_titles_frame = tk.Frame(self, bg = 'lightgreen')
-        self.column_titles_frame.grid(row = 3, column = 1, sticky = 'nsew')
-
-        # Create league name frame
-        self.league_name_frame = tk.Frame(self, bg = 'lightgreen')
-        self.league_name_frame.grid(row = 3, column = 2, sticky = 'nsew')
-
-        # Create team roster frame
-        self.team_roster_frame = tk.Frame(self, bg = 'lightcoral', width = 300)
-        self.team_roster_frame.grid(row = 4, column = 0, sticky = 'nsew')
-
-        # Create available players frame
-        self.available_players_frame = tk.Frame(self, bg = 'lightcoral', width = 600)
-        self.available_players_frame.grid(row = 4, column = 1, sticky = 'nsew')
-
-        # Create draft history frame
-        self.draft_history_frame = tk.Frame(self, bg = 'lightcoral', width = 300)
-        self.draft_history_frame.grid(row = 4, column = 2, sticky = 'nsew')
-
-        # Create recommendations title frame
-        self.recommendations_title_frame = tk.Frame(self, bg = 'lightgreen')
-        self.recommendations_title_frame.grid(row = 5, column = 0, columnspan = 3, sticky = 'nsew')
-
-        # Create recommendations round frame
-        self.recommendations_round_frame = tk.Frame(self, bg = 'lightcoral')
-        self.recommendations_round_frame.grid(row = 6, column = 0, columnspan = 3, sticky = 'nsew')
-
-        # Create recommendations frame
-        self.recommendations_frame = tk.Frame(self, bg = 'lightcoral')
-        self.recommendations_frame.grid(row = 7, column = 0, columnspan = 3, sticky = 'nsew')
-
-        # Initialize list of team names in their drafting order
-        self.draft_order = []
-
-        # Populate list with team names if drafting style is standard
-        if self.my_draft.drafting_style ==  'Standard':
-            for _ in range(sum(self.my_draft.position_count.values())):
-                for i in range(1, self.my_draft.num_teams + 1):
-                    for team in self.my_teams:
-                        if team.draft_position ==  i:
-                            self.draft_order.append(team.team_name)
-                            break
-
-        # Populate list of team names if drafting style is snake
-        elif self.my_draft.drafting_style ==  'Snake':
-            forward = True
-            for _ in range(sum(self.my_draft.position_count.values())):
-                if forward:
-                    for i in range(1, self.my_draft.num_teams + 1):
-                        for team in self.my_teams:
-                            if team.draft_position ==  i:
-                                self.draft_order.append(team.team_name)
-                                break
-                else:
-                    for i in range(self.my_draft.num_teams, 0, -1):
-                        for team in self.my_teams:
-                            if team.draft_position ==  i:
-                                self.draft_order.append(team.team_name)
-                                break
-                forward = not forward
+        # Initialize draft order efficiently
+        self.draft_order = self._generate_draft_order()
 
         # Initialize list for draft selections
         self.draft_selections = []
 
         # Create scrollable frames
         self.create_scrollable_frame(self.team_roster_frame)
-        self.create_scrollable_frame(self.available_players_frame)
         self.create_scrollable_frame(self.draft_history_frame)
+
+        # Create Treeview for available players
+        self.player_tree = ttk.Treeview(self.available_players_frame, columns=('Rank', 'Name', 'Team', 'Bye', 'Position', 'Avg ADP'), show='headings', selectmode='browse')
+        for col in ('Rank', 'Name', 'Team', 'Bye', 'Position', 'Avg ADP'):
+            self.player_tree.heading(col, text=col)
+            self.player_tree.column(col, anchor='w', width=80)
+        self.player_tree.grid(row=0, column=0, sticky='nsew')
+        self.available_players_frame.grid_rowconfigure(0, weight=1)
+        self.available_players_frame.grid_columnconfigure(0, weight=1)
+
+        # Add draft button below Treeview
+        self.draft_button = tk.Button(self.available_players_frame, text='DRAFT SELECTED PLAYER', command=self.draft_selected_player)
+        self.draft_button.grid(row=1, column=0, sticky='ew', pady=5)
 
         # Display starting state for dynamic frames
         self.display_static_frames()
@@ -129,47 +80,47 @@ class DraftBoardFrame(tk.Frame):
         self.display_team_roster()
         self.display_available_players()
 
+    def _generate_draft_order(self):
+        # Use a single pass to generate draft order, avoid nested loops
+        order = []
+        team_lookup = {team.draft_position: team.team_name for team in self.my_teams}
+        picks = sum(self.my_draft.position_count.values())
+        if self.my_draft.drafting_style == 'Standard':
+            for _ in range(picks):
+                for i in range(1, self.my_draft.num_teams + 1):
+                    order.append(team_lookup[i])
+        elif self.my_draft.drafting_style == 'Snake':
+            forward = True
+            for _ in range(picks):
+                rng = range(1, self.my_draft.num_teams + 1) if forward else range(self.my_draft.num_teams, 0, -1)
+                for i in rng:
+                    order.append(team_lookup[i])
+                forward = not forward
+        return order
+
     def create_scrollable_frame(self, frame):
-        # Create a canvas within the frame
-        canvas = tk.Canvas(frame, bg = 'lightyellow')
-        canvas.grid(row = 0, column = 0, sticky = 'nsew')
-
-        # Add a scrollbar to the right of the canvas
-        scrollbar = tk.Scrollbar(frame, orient = 'vertical', command = canvas.yview)
-        scrollbar.grid(row = 0, column = 1, sticky = 'ns')
-
-        # Configure the grid for the parent frame
-        frame.grid_rowconfigure(0, weight = 1)
-        frame.grid_columnconfigure(0, weight = 1)
-        frame.grid_columnconfigure(1, weight = 0)
-
-        # Create a scrollable frame inside the canvas
-        scrollable_frame = tk.Frame(canvas, bg = 'lightgrey')
-        scrollable_frame.grid(row = 0, column = 0, sticky = 'nsew')
-
-        # Bind the scroll region to the size of the scrollable frame
+        # Unchanged, but only create scrollable frames once
+        canvas = tk.Canvas(frame, bg='lightyellow')
+        canvas.grid(row=0, column=0, sticky='nsew')
+        scrollbar = tk.Scrollbar(frame, orient='vertical', command=canvas.yview)
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_columnconfigure(1, weight=0)
+        scrollable_frame = tk.Frame(canvas, bg='lightgrey')
+        scrollable_frame.grid(row=0, column=0, sticky='nsew')
         scrollable_frame.bind(
             '<Configure>',
-            lambda e: canvas.configure(
-                scrollregion = canvas.bbox('all')
-            )
+            lambda e: canvas.configure(scrollregion=canvas.bbox('all'))
         )
-
-        # Add the scrollable frame to the canvas
-        canvas_window = canvas.create_window((0, 0), window = scrollable_frame, anchor = 'nw')
-
-        # Configure the scrollbar to work with the canvas
-        canvas.configure(yscrollcommand = scrollbar.set)
-
-        # Bind the canvas to adjust the scrollable frame width
-        canvas.bind('<Configure>', lambda e: canvas.itemconfig(canvas_window, width = e.width))
-
-        # Store the scrollable frame object as an attribute to access later
-        if frame ==  self.team_roster_frame:
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.itemconfig(canvas_window, width=e.width))
+        if frame == self.team_roster_frame:
             self.team_roster_scrollable_frame = scrollable_frame
-        elif frame ==  self.available_players_frame:
+        elif frame == self.available_players_frame:
             self.available_players_scrollable_frame = scrollable_frame
-        elif frame ==  self.draft_history_frame:
+        elif frame == self.draft_history_frame:
             self.draft_history_scrollable_frame = scrollable_frame
 
     def display_static_frames(self):
@@ -223,21 +174,14 @@ class DraftBoardFrame(tk.Frame):
             tk.Label(self.recommendations_round_frame, text = recommendation_texts[i], font = ('Arial', 8)).grid(row = 0, column = i, sticky = 'nsew')
 
     def display_draft_order(self):
-        # Clear any existing widgets in the frame
+        # Clear widgets efficiently
         for widget in self.draft_order_frame.winfo_children():
             widget.destroy()
-
-        # Configure the grid to ensure labels expand as needed
-        self.draft_order_frame.grid_columnconfigure(0, weight = 1)
-        for i in range(1, self.my_draft.num_teams + 1):
-            self.draft_order_frame.grid_columnconfigure(i, weight = 1)
-        self.draft_order_frame.grid_columnconfigure(self.my_draft.num_teams + 1, weight = 1)
-
-        # Create labels for each team in the draft
-        for i in range(self.my_draft.num_teams):
-            team_name = self.draft_order[i]
-            team_name_label = tk.Label(self.draft_order_frame, text = team_name, font = ('Arial', 8))
-            team_name_label.grid(row = 0, column = i+1, padx = 5, pady = 10, sticky = 'nsew')
+        self.draft_order_frame.grid_columnconfigure(0, weight=1)
+        for i in range(1, self.my_draft.num_teams + 2):
+            self.draft_order_frame.grid_columnconfigure(i, weight=1)
+        for i, team_name in enumerate(self.draft_order[:self.my_draft.num_teams]):
+            tk.Label(self.draft_order_frame, text=team_name, font=('Arial', 8)).grid(row=0, column=i+1, padx=5, pady=10, sticky='nsew')
 
     def display_team_roster(self):
         # Clear any existing widgets in the frame
@@ -323,58 +267,39 @@ class DraftBoardFrame(tk.Frame):
                 break
 
     def display_available_players(self):
-        # Clear any existing widgets in the frame
-        for widget in self.available_players_scrollable_frame.winfo_children():
-            widget.destroy()
-
-        # Configure the grid and initialize row
-        self.available_players_scrollable_frame.grid_columnconfigure(0, weight = 1)
-        row = 0
-
-        # Create a frame for each player
+        # Update Treeview instead of recreating widgets
+        self.player_tree.delete(*self.player_tree.get_children())
         for player in self.my_player_board.players:
-            player_frame = tk.Frame(self.available_players_scrollable_frame, bg = 'lightgrey', pady = 2)
-            player_frame.grid(row = row, column = 0, sticky = 'nsew')
+            self.player_tree.insert('', 'end', values=(player[1], player[2], player[3], player[4], player[5], player[12]))
 
-            # Configure columns for player frame
-            player_frame.grid_columnconfigure(0, weight = 1)
-            player_frame.grid_columnconfigure(1, weight = 3)
-            player_frame.grid_columnconfigure(2, weight = 1)
-            player_frame.grid_columnconfigure(3, weight = 1)
-            player_frame.grid_columnconfigure(4, weight = 1)
-            player_frame.grid_columnconfigure(5, weight = 1)
-            player_frame.grid_columnconfigure(6, weight = 1)
-
-            # Create rank label
-            rank_label = tk.Label(player_frame, text = player[1], anchor = 'w', font = ('Arial', 8))
-            rank_label.grid(row = 0, column = 0, sticky = 'nsew')
-
-            # Create name label
-            name_label = tk.Label(player_frame, text = player[2], anchor = 'w', font = ('Arial', 8))
-            name_label.grid(row = 0, column = 1, sticky = 'nsew')
-
-            # Create team label
-            team_label = tk.Label(player_frame, text = player[3], anchor = 'w', font = ('Arial', 8))
-            team_label.grid(row = 0, column = 2, sticky = 'nsew')
-
-            # Create bye label
-            bye_label = tk.Label(player_frame, text = player[4], anchor = 'w', font = ('Arial', 8))
-            bye_label.grid(row = 0, column = 3, sticky = 'nsew')
-
-            # Create position label
-            position_label = tk.Label(player_frame, text = player[5], anchor = 'w', font = ('Arial', 8))
-            position_label.grid(row = 0, column = 4, sticky = 'nsew')
-
-            # Create avg adp label
-            avg_adp_label = tk.Label(player_frame, text = player[12], anchor = 'w', font = ('Arial', 8))
-            avg_adp_label.grid(row = 0, column = 5, sticky = 'nsew')
-
-            # Create draft button
-            draft_button = tk.Button(player_frame, text = 'DRAFT', command = lambda f = player_frame: self.draft_player(f))
-            draft_button.grid(row = 0, column = 6, sticky = 'nsew')
-
-            # Increment row to move to the next player
-            row += 1
+    def draft_selected_player(self):
+        selected = self.player_tree.selection()
+        if not selected:
+            return
+        player_values = self.player_tree.item(selected[0])['values']
+        # Find player in database using name, team, position
+        player = self.my_db_table.find_player(player_values[1], player_values[2], player_values[4])
+        if not player:
+            return
+        player_id = player[0]
+        drafting_team_name = self.draft_order[0]
+        for team in self.my_teams:
+            if team.team_name == drafting_team_name:
+                team.draft_player(player_id)
+                self.draft_selections.append([team.team_name, player[0], player[2]])
+                break
+        del self.draft_order[0]
+        self.my_player_board = PlayerBoard(self.my_db_table)
+        my_sim = Simulation(self.my_teams, self.my_player_board, self.draft_order)
+        self.recommended_player = my_sim.recommend_player(self.my_player_board.players, self.draft_order[0])
+        recommended_future_players = my_sim.recommend_future_players()
+        self.recommended_players_next_round = recommended_future_players[0]
+        self.recommended_players_two_rounds = recommended_future_players[1]
+        self.display_draft_order()
+        self.display_team_roster()
+        self.display_available_players()
+        self.display_draft_history()
+        self.display_recommendations()
 
     def display_draft_history(self):
         # Clear any existing widgets in the frame

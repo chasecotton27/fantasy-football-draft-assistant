@@ -11,8 +11,8 @@ class TeamSetupFrame(tk.Frame):
         self.my_csv_file = my_csv_file
 
         # Create title label
-        self.title_label = tk.Label(self, text = 'Team Setup', font = ('Arial', 14))
-        self.title_label.pack(pady = 10)
+        self.title_label = tk.Label(self, text='Team Setup', font=('Arial', 14))
+        self.title_label.pack(pady=10)
 
         # Create teams frame
         self.teams_frame = tk.Frame(self)
@@ -22,43 +22,43 @@ class TeamSetupFrame(tk.Frame):
         self.team_names = []
         self.draft_positions = []
 
-        # Loop through the number of teams from previous frame
+        # Use a single loop to create all widgets and cache variables
         for i in range(self.my_draft.num_teams):
-            # Create team name label
-            team_name_label = tk.Label(self.teams_frame, text = f'Team {i + 1} Name:')
-            team_name_label.grid(row = i, column = 0, padx = 5, pady = 5)
-
-            # Create team name entry and store it as a variable
             team_name_var = tk.StringVar()
-            team_name_entry = tk.Entry(self.teams_frame, textvariable = team_name_var)
-            team_name_entry.grid(row = i, column = 1, padx = 5, pady = 5)
-
-            # Add team name variable to the list
-            self.team_names.append(team_name_var)
-
-            # Create draft position label
-            draft_position_label = tk.Label(self.teams_frame, text = f'Team {i + 1} Draft Position:')
-            draft_position_label.grid(row = i, column = 2, padx = 5, pady = 5)
-
-            # Create draft position entry and store it as a variable
             draft_position_var = tk.IntVar()
-            draft_position_entry = tk.Entry(self.teams_frame, textvariable = draft_position_var)
-            draft_position_entry.grid(row = i, column = 3, padx = 5, pady = 5)
 
-            # Add draft position variable to the list
+            tk.Label(self.teams_frame, text=f'Team {i + 1} Name:').grid(row=i, column=0, padx=5, pady=5)
+            tk.Entry(self.teams_frame, textvariable=team_name_var).grid(row=i, column=1, padx=5, pady=5)
+            tk.Label(self.teams_frame, text=f'Team {i + 1} Draft Position:').grid(row=i, column=2, padx=5, pady=5)
+            tk.Entry(self.teams_frame, textvariable=draft_position_var).grid(row=i, column=3, padx=5, pady=5)
+
+            self.team_names.append(team_name_var)
             self.draft_positions.append(draft_position_var)
 
         # Create next button to finalize team setup
-        self.next_button = tk.Button(self, text = 'Next', command = self.submit_teams_settings)
-        self.next_button.pack(pady = 20)
+        self.next_button = tk.Button(self, text='Next', command=self.submit_teams_settings)
+        self.next_button.pack(pady=20)
+
+        # Cache last team settings to avoid unnecessary recreation
+        self.last_team_settings = None
 
     # Method to process teams settings
     def submit_teams_settings(self):
+        # Collect team settings data
+        team_settings_tuple = tuple((name_var.get(), position_var.get()) for name_var, position_var in zip(self.team_names, self.draft_positions))
+        if self.last_team_settings == team_settings_tuple:
+            # If settings haven't changed, don't recreate teams
+            self.controller.show_frame(DraftBoardFrame, self.my_draft, self.my_db_table, self.my_csv_file, self.my_teams)
+            return
+
+        self.last_team_settings = team_settings_tuple
+
         # Create Team objects from input from the user using list comprehension
         my_teams = [
             Team(name_var.get(), position_var.get(), self.my_db_table, self.my_draft)
             for name_var, position_var in zip(self.team_names, self.draft_positions)
         ]
+        self.my_teams = my_teams
 
         # Show next frame after completing team setup
         self.controller.show_frame(DraftBoardFrame, self.my_draft, self.my_db_table, self.my_csv_file, my_teams)
