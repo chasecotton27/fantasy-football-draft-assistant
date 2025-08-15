@@ -83,13 +83,13 @@ class DraftSetupFrame(tk.Frame):
         # Conditional logic to determine which CSV file to create a database from
         if my_draft.scoring_format == 'Standard':
             db_table_name = 'standard_table'
-            csv_file_path = 'adp-data/8_11_24_ADP_Rankings_Standard.csv'
+            csv_file_path = 'adp-data/8_15_25_ADP_Rankings_Standard.csv'
         elif my_draft.scoring_format == 'Half PPR':
             db_table_name = 'half_ppr_table'
-            csv_file_path = 'adp-data/8_11_24_ADP_Rankings_Half_PPR.csv'
+            csv_file_path = 'adp-data/8_15_25_ADP_Rankings_Half_PPR.csv'
         else:
             db_table_name = 'full_ppr_table'
-            csv_file_path = 'adp-data/8_11_24_ADP_Rankings_Full_PPR.csv'
+            csv_file_path = 'adp-data/8_15_25_ADP_Rankings_Full_PPR.csv'
 
         # Create DatabaseTable object
         my_db_table = DatabaseTable(db_table_name)

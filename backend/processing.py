@@ -50,20 +50,24 @@ class CSVFile:
                 except Exception:
                     adp_rtsports = None
                 try:
+                    adp_fantrax = float(row['Fantrax'])
+                except Exception:
+                    adp_fantrax = None
+                try:
                     avg_adp = float(row['AVG'])
                 except Exception:
                     avg_adp = None
 
                 # Only add valid players
                 if name and rank:
-                    players_to_insert.append((rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, avg_adp))
+                    players_to_insert.append((rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp))
 
         # Batch insert for speed
         if players_to_insert:
             self.db_table.cursor.executemany(
                 f'''
-                INSERT INTO {self.db_table.table_name} (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, avg_adp)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO {self.db_table.table_name} (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 players_to_insert
             )

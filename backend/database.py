@@ -29,6 +29,7 @@ class DatabaseTable:
             adp_sleeper REAL,
             adp_nfl REAL,
             adp_rtsports REAL,
+            adp_fantrax REAL,
             avg_adp REAL
         )
         ''')
@@ -40,11 +41,11 @@ class DatabaseTable:
         self.conn.commit()
 
     # Method to insert a player into a database table
-    def insert_player(self, rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, avg_adp):
+    def insert_player(self, rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp):
         self.cursor.execute(f'''
-        INSERT INTO {self.table_name} (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, avg_adp)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, avg_adp))
+        INSERT INTO {self.table_name} (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp))
         self.conn.commit()
 
     # Method to remove a player from a database table

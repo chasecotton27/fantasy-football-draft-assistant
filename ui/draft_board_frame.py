@@ -270,7 +270,7 @@ class DraftBoardFrame(tk.Frame):
         # Update Treeview instead of recreating widgets
         self.player_tree.delete(*self.player_tree.get_children())
         for player in self.my_player_board.players:
-            self.player_tree.insert('', 'end', values=(player[1], player[2], player[3], player[4], player[5], player[12]))
+            self.player_tree.insert('', 'end', values=(player[1], player[2], player[3], player[4], player[5], player[13]))
 
     def draft_selected_player(self):
         selected = self.player_tree.selection()
