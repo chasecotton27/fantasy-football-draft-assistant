@@ -54,15 +54,11 @@ class TeamSetupFrame(tk.Frame):
 
     # Method to process teams settings
     def submit_teams_settings(self):
-        my_teams = []
-        i = 1
-
-        # Create Team objects from input from the user
-        for name_var, position_var in zip(self.team_names, self.draft_positions):
-            team_var_name = f'team_{str(i)}'
-            team_var_name = Team(name_var.get(), position_var.get(), self.my_db_table, self.my_draft)
-            my_teams.append(team_var_name)
-            i +=  1
+        # Create Team objects from input from the user using list comprehension
+        my_teams = [
+            Team(name_var.get(), position_var.get(), self.my_db_table, self.my_draft)
+            for name_var, position_var in zip(self.team_names, self.draft_positions)
+        ]
 
         # Show next frame after completing team setup
-        self.controller.show_frame(DraftBoardFrame, self.my_draft, self.my_db_table, my_teams)
+        self.controller.show_frame(DraftBoardFrame, self.my_draft, self.my_db_table, self.my_csv_file, my_teams)
