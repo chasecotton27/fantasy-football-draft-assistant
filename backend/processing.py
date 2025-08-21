@@ -9,63 +9,69 @@ class CSVFile:
 
     # Method to process CSV data and insert all players into a database table
     def add_players_to_db_table(self):
-        with open(self.csv_file_path, 'r') as file:
+        # Use list to batch insert for speed
+        players_to_insert = []
+        with open(self.csv_file_path, 'r', newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
-
             for row in reader:
                 try:
                     rank = int(row['Rank'])
-                except:
+                except Exception:
                     rank = None
-                try:
-                    name = row['Player']
-                except:
-                    name = None
-                try:
-                    team = row['Team']
-                except:
-                    team = None
+                name = row.get('Player', None)
+                team = row.get('Team', None)
                 try:
                     bye = int(row['Bye'])
-                except:
+                except Exception:
                     bye = None
-                try:
-                    position = row['POS']
-                except:
-                    position = None
+                position = row.get('POS', None)
                 try:
                     adp_espn = float(row['ESPN'])
-                except:
+                except Exception:
                     adp_espn = None
                 try:
                     adp_yahoo = float(row['Yahoo'])
-                except:
+                except Exception:
                     adp_yahoo = None
                 try:
                     adp_cbs = float(row['CBS'])
-                except:
+                except Exception:
                     adp_cbs = None
                 try:
                     adp_sleeper = float(row['Sleeper'])
-                except:
+                except Exception:
                     adp_sleeper = None
                 try:
                     adp_nfl = float(row['NFL'])
-                except:
+                except Exception:
                     adp_nfl = None
                 try:
                     adp_rtsports = float(row['RTSports'])
-                except:
+                except Exception:
                     adp_rtsports = None
                 try:
+                    adp_fantrax = float(row['Fantrax'])
+                except Exception:
+                    adp_fantrax = None
+                try:
                     avg_adp = float(row['AVG'])
-                except:
+                except Exception:
                     avg_adp = None
 
-                if name == 1 and None or rank == 1 and None:
-                    pass
-                else:
-                    self.db_table.insert_player(rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, avg_adp)
+                # Only add valid players
+                if name and rank:
+                    players_to_insert.append((rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp))
+
+        # Batch insert for speed
+        if players_to_insert:
+            self.db_table.cursor.executemany(
+                f'''
+                INSERT INTO {self.db_table.table_name} (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                players_to_insert
+            )
+            self.db_table.conn.commit()
 
 # Define the Draft class
 class Draft:
@@ -121,7 +127,7 @@ class PlayerBoard:
     def __init__(self, db_table):
         self.db_table = db_table
         self.players = []
-        self.player_count = len(self.players)
+        self.player_count = 0
         self.filter_all_players()
 
     # Method to erase a player board before fetching from a database table and repopulating a player board
@@ -133,7 +139,6 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_all_players()
         self.player_count = len(self.players)
-
         return self.players
 
     # Method to populate a player board with all QBs from a database table
@@ -141,7 +146,6 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_qbs()
         self.player_count = len(self.players)
-
         return self.players
 
     # Method to populate a player board with all RBs from a database table
@@ -149,7 +153,6 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_rbs()
         self.player_count = len(self.players)
-
         return self.players
 
     # Method to populate a player board with all WRs from a database table
@@ -157,7 +160,6 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_wrs()
         self.player_count = len(self.players)
-
         return self.players
 
     # Method to populate a player board with all TEs from a database table
@@ -165,7 +167,6 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_tes()
         self.player_count = len(self.players)
-
         return self.players
 
     # Method to populate a player board with all Ks from a database table
@@ -173,7 +174,6 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_ks()
         self.player_count = len(self.players)
-
         return self.players
 
     # Method to populate a player board with all DSTs from a database table
@@ -181,5 +181,4 @@ class PlayerBoard:
         self.erase_player_board()
         self.players = self.db_table.fetch_dsts()
         self.player_count = len(self.players)
-
         return self.players
