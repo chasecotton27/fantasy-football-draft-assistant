@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     my_draft = Draft(scoring_format, position_count, drafting_style, num_teams)
     my_db_table = DatabaseTable('full_ppr_table')
-    my_csv_file = CSVFile('adp-data/8_11_24_ADP_Rankings_Full_PPR.csv', my_db_table)
+    my_csv_file = CSVFile('adp-data/8_15_25_ADP_Rankings_Full_PPR.csv', my_db_table)
 
     team_names = ['Team Bryant', 'Show us your TDs', '1-2 Punch', 'NC BrownMambas', 'San Antonio Bean and Cheese', 'Hold my D--ker', 'Team ROBINSON', 'afghaNAVstan',
                 'Shauna Cotton', 'Blane SUPER MEGA Qweef', 'Bobby Boucher', 'Debby Gallagher']

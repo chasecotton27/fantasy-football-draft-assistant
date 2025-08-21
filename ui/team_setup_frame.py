@@ -12,7 +12,7 @@ class TeamSetupFrame(tk.Frame):
 
         # Create title label
         self.title_label = tk.Label(self, text='Team Setup', font=('Arial', 14))
-        self.title_label.pack(pady=10)
+        self.title_label.pack(pady=40)
 
         # Create teams frame
         self.teams_frame = tk.Frame(self)
@@ -37,7 +37,7 @@ class TeamSetupFrame(tk.Frame):
 
         # Create next button to finalize team setup
         self.next_button = tk.Button(self, text='Next', command=self.submit_teams_settings)
-        self.next_button.pack(pady=20)
+        self.next_button.pack(pady=40)
 
         # Cache last team settings to avoid unnecessary recreation
         self.last_team_settings = None

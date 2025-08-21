@@ -9,20 +9,13 @@ class DraftSetupFrame(tk.Frame):
         super().__init__(parent)
         self.controller = controller
 
-        # Use a single frame for position entries to reduce widget clutter
-        self.position_entries_frame = tk.Frame(self)
-        self.position_entries_frame.pack(pady=10)
-
-        # Create scoring format label and combobox
-        self.scoring_format_label = tk.Label(self, text='Select Scoring Format:')
-        self.scoring_format_label.pack(pady=10)
-        self.scoring_format_var = tk.StringVar(value='Standard')
-        self.scoring_format_menu = ttk.Combobox(self, textvariable=self.scoring_format_var, values=('Standard', 'Half PPR', 'Full PPR'), state='readonly')
-        self.scoring_format_menu.pack()
-
         # Create position count label
         self.position_count_label = tk.Label(self, text='Enter Position Counts:')
-        self.position_count_label.pack(pady=10)
+        self.position_count_label.pack(padx=520, pady=12)
+
+        # Use a single frame for position entries to reduce widget clutter
+        self.position_entries_frame = tk.Frame(self)
+        self.position_entries_frame.pack(padx=520, pady=12)
 
         # Initialize list of positions and a dictionary for position entries
         self.positions = ['QB', 'RB', 'WR', 'TE', 'Flex', 'K', 'DST', 'Bench']
@@ -36,23 +29,30 @@ class DraftSetupFrame(tk.Frame):
             position_entry.grid(row=idx, column=1, padx=5, pady=2)
             self.position_entries[position] = position_entry
 
+        # Create scoring format label and combobox
+        self.scoring_format_label = tk.Label(self, text='Select Scoring Format:')
+        self.scoring_format_label.pack(pady=10)
+        self.scoring_format_var = tk.StringVar(value='Standard')
+        self.scoring_format_menu = ttk.Combobox(self, textvariable=self.scoring_format_var, values=('Standard', 'Half PPR', 'Full PPR'), state='readonly')
+        self.scoring_format_menu.pack(padx=520, pady=12)
+
         # Create drafting style label and combobox
         self.drafting_style_label = tk.Label(self, text='Select Drafting Style:')
         self.drafting_style_label.pack(pady=10)
         self.drafting_style_var = tk.StringVar(value='Standard')
         self.drafting_style_menu = ttk.Combobox(self, textvariable=self.drafting_style_var, values=('Standard', 'Snake'), state='readonly')
-        self.drafting_style_menu.pack()
+        self.drafting_style_menu.pack(padx=520, pady=12)
 
         # Create team count label and entry
         self.team_count_label = tk.Label(self, text='Enter the number of teams:')
         self.team_count_label.pack(pady=10)
         self.team_count_var = tk.IntVar(value=12)
         self.team_count_entry = tk.Entry(self, textvariable=self.team_count_var, width=5)
-        self.team_count_entry.pack()
+        self.team_count_entry.pack(padx=520, pady=12)
 
         # Create next button to finalize draft setup
         self.next_button = tk.Button(self, text='Next', command=self.submit_draft_settings)
-        self.next_button.pack(pady=20)
+        self.next_button.pack(padx=520, pady=12)
 
         # Cache last draft settings to avoid unnecessary reloads
         self.last_settings = None
