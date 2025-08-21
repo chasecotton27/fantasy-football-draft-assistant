@@ -83,11 +83,17 @@ class DraftBoardFrame(tk.Frame):
         self.team_roster_frame.grid_rowconfigure(0, weight=1)
         self.team_roster_frame.grid_columnconfigure(0, weight=1)
 
-        # Create Treeview for draft order (horizontal layout)
-        self.draft_order_tree = ttk.Treeview(self.draft_order_frame, columns=[f'Team{i+1}' for i in range(self.my_draft.num_teams)], show='headings', height=1, selectmode='none')
+        # Create Treeview for draft order (horizontal layout with overall pick numbers)
+        self.draft_order_tree = ttk.Treeview(
+            self.draft_order_frame,
+            columns=[f'Team{i+1}' for i in range(self.my_draft.num_teams)],
+            show='headings',
+            height=1,
+            selectmode='none'
+        )
         for i in range(self.my_draft.num_teams):
             col_name = f'Team{i+1}'
-            self.draft_order_tree.heading(col_name, text=f'Team {i+1}')
+            self.draft_order_tree.heading(col_name, text=f'Pick {i+1}')  # Will be updated dynamically
             self.draft_order_tree.column(col_name, anchor='center', width=120)
         self.draft_order_tree.grid(row=0, column=0, sticky='nsew')
         self.draft_order_frame.grid_rowconfigure(0, weight=1)
@@ -172,10 +178,19 @@ class DraftBoardFrame(tk.Frame):
 
     def display_draft_order(self):
         self.draft_order_tree.delete(*self.draft_order_tree.get_children())
-        # Lay out team names horizontally in a single row
+        # Get the teams in draft order for the current round
         team_names = self.draft_order[:self.my_draft.num_teams]
-        values = tuple(team_names)
-        self.draft_order_tree.insert('', 'end', values=values)
+        # Calculate the overall pick number for each team in the current draft order slice
+        # The overall pick number is just the index in the full draft_order list + 1
+        current_pick_start = len(self.draft_selections)
+        pick_numbers = []
+        for i in range(self.my_draft.num_teams):
+            overall_pick_number = current_pick_start + i + 1
+            col_name = f'Team{i+1}'
+            self.draft_order_tree.heading(col_name, text=f'{overall_pick_number}')
+            pick_numbers.append(overall_pick_number)
+        # Insert team names as a single row
+        self.draft_order_tree.insert('', 'end', values=tuple(team_names))
 
     def display_team_roster(self):
         self.team_roster_tree.delete(*self.team_roster_tree.get_children())
