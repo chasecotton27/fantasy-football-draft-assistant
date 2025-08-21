@@ -19,7 +19,7 @@ class DraftBoardFrame(tk.Frame):
         for i in range(8):
             self.grid_rowconfigure(i, weight=1 if i == 4 else 0)
         for i in range(3):
-            self.grid_columnconfigure(i, weight=2 if i == 1 else 1)
+            self.grid_columnconfigure(i, weight=1 if i == 1 else 1)
 
         # Create frames (unchanged)
         self.title_frame = tk.Frame(self)
@@ -60,10 +60,11 @@ class DraftBoardFrame(tk.Frame):
         # Create Treeview for available players
         self.player_tree = ttk.Treeview(self.available_players_frame, columns=('Rank', 'Name', 'Team', 'Bye', 'Position', 'Avg ADP'), show='headings', selectmode='browse')
         for col in ('Rank', 'Name', 'Team', 'Bye', 'Position', 'Avg ADP'):
-            self.player_tree.heading(col, text=col)
             if col == 'Name':
+                self.player_tree.heading(col, text=col, anchor='w')
                 self.player_tree.column(col, anchor='w', width=180)
             else:
+                self.player_tree.heading(col, text=col, anchor='center')
                 self.player_tree.column(col, anchor='center', width=60)
         self.player_tree.grid(row=0, column=0, sticky='nsew')
         self.available_players_frame.grid_rowconfigure(0, weight=1)
@@ -76,7 +77,7 @@ class DraftBoardFrame(tk.Frame):
         # Create Treeview for team roster
         self.team_roster_tree = ttk.Treeview(self.team_roster_frame, columns=('Position', 'Player'), show='headings', selectmode='none')
         self.team_roster_tree.heading('Position', text='Position')
-        self.team_roster_tree.heading('Player', text='Player')
+        self.team_roster_tree.heading('Player', text='Player', anchor='w')
         self.team_roster_tree.column('Position', anchor='center', width=80)  # Centered text
         self.team_roster_tree.column('Player', anchor='w', width=120)
         self.team_roster_tree.grid(row=0, column=0, sticky='nsew')
@@ -94,7 +95,7 @@ class DraftBoardFrame(tk.Frame):
         for i in range(self.my_draft.num_teams):
             col_name = f'Team{i+1}'
             self.draft_order_tree.heading(col_name, text=f'Pick {i+1}')  # Will be updated dynamically
-            self.draft_order_tree.column(col_name, anchor='center', width=120)
+            self.draft_order_tree.column(col_name, anchor='center', width=80)
         self.draft_order_tree.grid(row=0, column=0, sticky='nsew')
         self.draft_order_frame.grid_rowconfigure(0, weight=1)
         self.draft_order_frame.grid_columnconfigure(0, weight=1)
@@ -120,8 +121,8 @@ class DraftBoardFrame(tk.Frame):
         # Create Treeview for draft history
         self.draft_history_tree = ttk.Treeview(self.draft_history_frame, columns=('Pick', 'Team', 'Player'), show='headings', selectmode='none')
         self.draft_history_tree.heading('Pick', text='Pick')
-        self.draft_history_tree.heading('Team', text='Team')
-        self.draft_history_tree.heading('Player', text='Player')
+        self.draft_history_tree.heading('Team', text='Team', anchor='w')
+        self.draft_history_tree.heading('Player', text='Player', anchor='w')
         self.draft_history_tree.column('Pick', anchor='center', width=30)
         self.draft_history_tree.column('Team', anchor='w', width=120)
         self.draft_history_tree.column('Player', anchor='w', width=120)
