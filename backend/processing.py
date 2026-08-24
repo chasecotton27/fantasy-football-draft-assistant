@@ -1,16 +1,38 @@
 import csv
+import sys
+from pathlib import Path
+
+
+# Resolve adp-data/ to an absolute path so CSV loading doesn't depend on the
+# current working directory -- necessary once this app is packaged with
+# PyInstaller, where the working directory at launch isn't guaranteed to be the
+# project/bundle directory.
+def _adp_data_dir():
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundle (onefile or onedir): _MEIPASS is where --add-data
+        # resources land in both modes.
+        return Path(getattr(sys, '_MEIPASS', Path(sys.executable).resolve().parent)) / 'adp-data'
+    return Path(__file__).resolve().parent.parent / 'adp-data'
+
+
+ADP_DATA_DIR = _adp_data_dir()
+
+SCORING_FORMAT_CSV_PATHS = {
+    'Standard': str(ADP_DATA_DIR / 'adp_standard.csv'),
+    'Half PPR': str(ADP_DATA_DIR / 'adp_half_ppr.csv'),
+    'Full PPR': str(ADP_DATA_DIR / 'adp_full_ppr.csv'),
+}
+
 
 # Define the Data class
 class CSVFile:
-    def __init__(self, csv_file_path, db_table):
+    def __init__(self, csv_file_path, player_repository):
         self.csv_file_path = csv_file_path
-        self.db_table = db_table
-        self.add_players_to_db_table()
+        self.player_repository = player_repository
+        self.add_players_to_repository()
 
-    # Method to process CSV data and insert all players into a database table
-    def add_players_to_db_table(self):
-        # Use list to batch insert for speed
-        players_to_insert = []
+    # Method to process CSV data and insert all players into the repository
+    def add_players_to_repository(self):
         with open(self.csv_file_path, 'r', newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
@@ -59,19 +81,12 @@ class CSVFile:
                     avg_adp = None
 
                 # Only add valid players
-                if name and rank:
-                    players_to_insert.append((rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp))
+                if name and rank is not None:
+                    self.player_repository.add_player(
+                        rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs,
+                        adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp
+                    )
 
-        # Batch insert for speed
-        if players_to_insert:
-            self.db_table.cursor.executemany(
-                f'''
-                INSERT INTO {self.db_table.table_name} (rank, name, team, bye, position, adp_espn, adp_yahoo, adp_cbs, adp_sleeper, adp_nfl, adp_rtsports, adp_fantrax, avg_adp)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                players_to_insert
-            )
-            self.db_table.conn.commit()
 
 # Define the Draft class
 class Draft:
@@ -81,31 +96,30 @@ class Draft:
         self.drafting_style = drafting_style
         self.num_teams = num_teams
 
+
 # Define the Team class
 class Team:
-    def __init__(self, team_name, draft_position, db_table, draft):
+    def __init__(self, team_name, draft_position, player_repository, draft):
         self.team_name = team_name
         self.draft_position = draft_position
-        self.db_table = db_table
+        self.player_repository = player_repository
         self.draft = draft
         self.roster = []
         self.filled_roster_positions = []
         self.required_roster_positions = []
-        
+
         # Initialize required roster positions list
         for position, count in self.draft.position_count.items():
             self.required_roster_positions.extend([position] * count)
 
-    # Method to draft a player and add them to a team's roster while removing them from a database table
+    # Method to draft a player and add them to a team's roster while removing them from the repository
     def draft_player(self, player_id):
-        player = self.db_table.fetch_player(player_id)
+        player = self.player_repository.fetch_player(player_id)
         self.roster.append(player)
-        self.db_table.remove_player(player_id)
+        self.player_repository.remove_player(player_id)
 
-        # Determine which position from the team's roster was just drafted
         drafted_player = self.roster[-1]
-        player_position_rank = drafted_player[5]
-        player_position = ''.join([char for char in player_position_rank if char.isalpha()])
+        player_position = drafted_player.position_group
 
         # Update filled roster positions
         self.filled_roster_positions.append(player_position)
@@ -113,72 +127,58 @@ class Team:
         # Update required roster positions
         if player_position in self.required_roster_positions:
             self.required_roster_positions.remove(player_position)
-        elif player_position == 'RB' and player_position not in self.required_roster_positions and 'Flex' in self.required_roster_positions:
+        elif player_position == 'RB' and 'Flex' in self.required_roster_positions:
             self.required_roster_positions.remove('Flex')
-        elif player_position == 'WR' and player_position not in self.required_roster_positions and 'Flex' in self.required_roster_positions:
+        elif player_position == 'WR' and 'Flex' in self.required_roster_positions:
             self.required_roster_positions.remove('Flex')
-        elif player_position == 'TE' and player_position not in self.required_roster_positions and 'Flex' in self.required_roster_positions:
+        elif player_position == 'TE' and 'Flex' in self.required_roster_positions:
             self.required_roster_positions.remove('Flex')
-        else:
+        elif 'Bench' in self.required_roster_positions:
             self.required_roster_positions.remove('Bench')
+        # else: roster is already full for this position (an "overdraft" beyond the
+        # configured roster shape) — tolerate it rather than crashing.
+
 
 # Define the PlayerBoard class
 class PlayerBoard:
-    def __init__(self, db_table):
-        self.db_table = db_table
+    def __init__(self, player_repository):
+        self.player_repository = player_repository
         self.players = []
         self.player_count = 0
         self.filter_all_players()
 
-    # Method to erase a player board before fetching from a database table and repopulating a player board
+    # Method to erase a player board before fetching from the repository and repopulating it
     def erase_player_board(self):
         self.players = []
 
-    # Method to populate a player board with all players from a database table
+    # Method to populate the player board, optionally filtered to one position group
+    def filter_by_position(self, position_group=None):
+        self.erase_player_board()
+        if position_group is None:
+            self.players = self.player_repository.fetch_all_players()
+        else:
+            self.players = self.player_repository.fetch_by_position(position_group)
+        self.player_count = len(self.players)
+        return self.players
+
     def filter_all_players(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_all_players()
-        self.player_count = len(self.players)
-        return self.players
+        return self.filter_by_position(None)
 
-    # Method to populate a player board with all QBs from a database table
-    def filter_qbs(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_qbs()
-        self.player_count = len(self.players)
-        return self.players
 
-    # Method to populate a player board with all RBs from a database table
-    def filter_rbs(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_rbs()
-        self.player_count = len(self.players)
-        return self.players
-
-    # Method to populate a player board with all WRs from a database table
-    def filter_wrs(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_wrs()
-        self.player_count = len(self.players)
-        return self.players
-
-    # Method to populate a player board with all TEs from a database table
-    def filter_tes(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_tes()
-        self.player_count = len(self.players)
-        return self.players
-
-    # Method to populate a player board with all Ks from a database table
-    def filter_ks(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_ks()
-        self.player_count = len(self.players)
-        return self.players
-
-    # Method to populate a player board with all DSTs from a database table
-    def filter_dsts(self):
-        self.erase_player_board()
-        self.players = self.db_table.fetch_dsts()
-        self.player_count = len(self.players)
-        return self.players
+# Generate the pick order (team name per pick) for the whole draft
+def generate_draft_order(my_teams, my_draft):
+    order = []
+    team_lookup = {team.draft_position: team.team_name for team in my_teams}
+    picks = sum(my_draft.position_count.values())
+    if my_draft.drafting_style == 'Standard':
+        for _ in range(picks):
+            for i in range(1, my_draft.num_teams + 1):
+                order.append(team_lookup[i])
+    elif my_draft.drafting_style == 'Snake':
+        forward = True
+        for _ in range(picks):
+            rng = range(1, my_draft.num_teams + 1) if forward else range(my_draft.num_teams, 0, -1)
+            for i in rng:
+                order.append(team_lookup[i])
+            forward = not forward
+    return order

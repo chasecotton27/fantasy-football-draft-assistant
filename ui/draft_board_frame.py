@@ -1,19 +1,26 @@
 import tkinter as tk
 from tkinter import ttk
-from backend.processing import PlayerBoard
+from backend.processing import PlayerBoard, generate_draft_order
 from backend.recommendations import Simulation
 
 class DraftBoardFrame(tk.Frame):
-    def __init__(self, parent, controller, my_draft, my_db_table, my_csv_file, my_teams):
+    def __init__(self, parent, controller, my_draft, my_player_repository, my_csv_file, my_teams):
         super().__init__(parent)
         self.controller = controller
         self.my_draft = my_draft
-        self.my_db_table = my_db_table
+        self.my_player_repository = my_player_repository
         self.my_csv_file = my_csv_file
         self.my_teams = my_teams
 
         # Create PlayerBoard object once, reuse for filtering
-        self.my_player_board = PlayerBoard(my_db_table)
+        self.my_player_board = PlayerBoard(my_player_repository)
+
+        # Available-players filter/search state
+        self.current_position_filter = None
+        self.current_search_text = ''
+
+        # Snapshot of the most recent pick, for single-level undo
+        self.last_action = None
 
         # Configure rows and columns for main frame (unchanged)
         for i in range(8):
@@ -52,7 +59,7 @@ class DraftBoardFrame(tk.Frame):
         self.recommendations_frame.grid(row=7, column=0, columnspan=3, sticky='nsew')
 
         # Initialize draft order efficiently
-        self.draft_order = self._generate_draft_order()
+        self.draft_order = generate_draft_order(self.my_teams, self.my_draft)
 
         # Initialize list for draft selections
         self.draft_selections = []
@@ -70,9 +77,11 @@ class DraftBoardFrame(tk.Frame):
         self.available_players_frame.grid_rowconfigure(0, weight=1)
         self.available_players_frame.grid_columnconfigure(0, weight=1)
 
-        # Add draft button below Treeview
+        # Add draft and undo buttons below Treeview
         self.draft_button = tk.Button(self.available_players_frame, text='DRAFT SELECTED PLAYER', command=self.draft_selected_player, bg="#bcbcbc")
         self.draft_button.grid(row=1, column=0, sticky='ew', pady=5)
+        self.undo_button = tk.Button(self.available_players_frame, text='UNDO LAST PICK', command=self.undo_last_pick, bg="#bcbcbc", state='disabled')
+        self.undo_button.grid(row=2, column=0, sticky='ew', pady=(0, 5))
 
         # Create Treeview for team roster
         self.team_roster_tree = ttk.Treeview(self.team_roster_frame, columns=('Position', 'Player'), show='headings', selectmode='none')
@@ -140,40 +149,32 @@ class DraftBoardFrame(tk.Frame):
 
         # Add filter buttons for available players
         filter_buttons = [
-            ("All", self.show_all),
-            ("QB", self.show_qbs),
-            ("RB", self.show_rbs),
-            ("WR", self.show_wrs),
-            ("TE", self.show_tes),
-            ("K", self.show_ks),
-            ("DST", self.show_dsts)
+            ("All", None),
+            ("QB", 'QB'),
+            ("RB", 'RB'),
+            ("WR", 'WR'),
+            ("TE", 'TE'),
+            ("K", 'K'),
+            ("DST", 'DST'),
         ]
-        for i, (label, command) in enumerate(filter_buttons):
-            btn = tk.Button(self.player_filters_frame, text=label, command=command, bg="#bcbcbc")
+        for i, (label, position_group) in enumerate(filter_buttons):
+            btn = tk.Button(self.player_filters_frame, text=label, command=lambda pg=position_group: self.show_position(pg), bg="#bcbcbc")
             btn.grid(row=0, column=i, padx=2, pady=2, sticky='ew')
         self.player_filters_frame.grid_columnconfigure(tuple(range(len(filter_buttons))), weight=1)
 
-    def _generate_draft_order(self):
-        order = []
-        team_lookup = {team.draft_position: team.team_name for team in self.my_teams}
-        picks = sum(self.my_draft.position_count.values())
-        if self.my_draft.drafting_style == 'Standard':
-            for _ in range(picks):
-                for i in range(1, self.my_draft.num_teams + 1):
-                    order.append(team_lookup[i])
-        elif self.my_draft.drafting_style == 'Snake':
-            forward = True
-            for _ in range(picks):
-                rng = range(1, self.my_draft.num_teams + 1) if forward else range(self.my_draft.num_teams, 0, -1)
-                for i in rng:
-                    order.append(team_lookup[i])
-                forward = not forward
-        return order
+        # Add name search, below the filter buttons
+        self.search_frame = tk.Frame(self.player_filters_frame)
+        self.search_frame.grid(row=1, column=0, columnspan=len(filter_buttons), sticky='ew', pady=(4, 0))
+        tk.Label(self.search_frame, text='Search:').pack(side='left', padx=(2, 4))
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(self.search_frame, textvariable=self.search_var)
+        self.search_entry.pack(side='left', fill='x', expand=True, padx=2)
+        self.search_var.trace_add('write', self._on_search_changed)
 
     def update_frames_content(self):
         self.display_draft_order()
         self.display_team_roster()
-        self.display_available_players()
+        self.refresh_available_players_display()
         self.display_draft_history()
         self.display_recommendations()
 
@@ -195,7 +196,7 @@ class DraftBoardFrame(tk.Frame):
 
     def display_team_roster(self):
         self.team_roster_tree.delete(*self.team_roster_tree.get_children())
-        current_team_name = self.draft_order[0]
+        current_team_name = self.draft_order[0] if self.draft_order else None
         for team in self.my_teams:
             if team.team_name == current_team_name:
                 position_counts = team.draft.position_count
@@ -205,31 +206,31 @@ class DraftBoardFrame(tk.Frame):
                     for _ in range(count):
                         player_name = ''
                         for player in team.roster:
-                            if position in player[5] and player[2] not in labeled_players:
-                                player_name = player[2]
+                            if position in player.position and player.name not in labeled_players:
+                                player_name = player.name
                                 labeled_players.add(player_name)
                                 filled_positions.append(position)
                                 break
-                            elif position == 'Flex' and player[2] not in labeled_players:
+                            elif position == 'Flex' and player.name not in labeled_players:
                                 rb_count = filled_positions.count('RB')
                                 wr_count = filled_positions.count('WR')
                                 te_count = filled_positions.count('TE')
-                                if 'RB' in player[5] and rb_count == team.draft.position_count['RB'] and team.draft.position_count['Flex'] >= 1:
-                                    player_name = player[2]
+                                if 'RB' in player.position and rb_count == team.draft.position_count['RB'] and team.draft.position_count['Flex'] >= 1:
+                                    player_name = player.name
                                     labeled_players.add(player_name)
                                     filled_positions.append(position)
                                     break
-                                elif 'WR' in player[5] and wr_count == team.draft.position_count['WR'] and team.draft.position_count['Flex'] >= 1:
-                                    player_name = player[2]
+                                elif 'WR' in player.position and wr_count == team.draft.position_count['WR'] and team.draft.position_count['Flex'] >= 1:
+                                    player_name = player.name
                                     labeled_players.add(player_name)
                                     filled_positions.append(position)
                                     break
-                                elif 'TE' in player[5] and te_count == team.draft.position_count['TE'] and team.draft.position_count['Flex'] >= 1:
-                                    player_name = player[2]
+                                elif 'TE' in player.position and te_count == team.draft.position_count['TE'] and team.draft.position_count['Flex'] >= 1:
+                                    player_name = player.name
                                     labeled_players.add(player_name)
                                     filled_positions.append(position)
                                     break
-                            elif position == 'Bench' and player[2] not in labeled_players:
+                            elif position == 'Bench' and player.name not in labeled_players:
                                 qb_count = filled_positions.count('QB')
                                 rb_count = filled_positions.count('RB')
                                 wr_count = filled_positions.count('WR')
@@ -237,45 +238,86 @@ class DraftBoardFrame(tk.Frame):
                                 flex_count = filled_positions.count('Flex')
                                 k_count = filled_positions.count('K')
                                 dst_count = filled_positions.count('DST')
-                                if (('QB' in player[5] and qb_count == team.draft.position_count['QB']) or ('RB' in player[5] and rb_count == team.draft.position_count['RB'] and flex_count == team.draft.position_count['Flex'])
-                                    or ('WR' in player[5] and wr_count == team.draft.position_count['WR'] and flex_count == team.draft.position_count['Flex'])
-                                    or ('TE' in player[5] and te_count == team.draft.position_count['TE'] and flex_count == team.draft.position_count['Flex'])
-                                    or (('RB' in player[5] or 'WR' in player[5] or 'TE' in player[5]) and flex_count == team.draft.position_count['Flex'])
-                                    or ('K' in player[5] and k_count == team.draft.position_count['K']) or ('DST' in player[5] and dst_count == team.draft.position_count['DST'])):
-                                    player_name = player[2]
+                                if (('QB' in player.position and qb_count == team.draft.position_count['QB']) or ('RB' in player.position and rb_count == team.draft.position_count['RB'] and flex_count == team.draft.position_count['Flex'])
+                                    or ('WR' in player.position and wr_count == team.draft.position_count['WR'] and flex_count == team.draft.position_count['Flex'])
+                                    or ('TE' in player.position and te_count == team.draft.position_count['TE'] and flex_count == team.draft.position_count['Flex'])
+                                    or (('RB' in player.position or 'WR' in player.position or 'TE' in player.position) and flex_count == team.draft.position_count['Flex'])
+                                    or ('K' in player.position and k_count == team.draft.position_count['K']) or ('DST' in player.position and dst_count == team.draft.position_count['DST'])):
+                                    player_name = player.name
                                     labeled_players.add(player_name)
                                     filled_positions.append(position)
                                     break
                         self.team_roster_tree.insert('', 'end', values=(position, player_name))
                 break
 
-    def display_available_players(self):
+    def refresh_available_players_display(self):
+        players = self.my_player_board.filter_by_position(self.current_position_filter)
+        if self.current_search_text:
+            search_text = self.current_search_text.lower()
+            players = [p for p in players if search_text in p.name.lower()]
+        self.display_available_players(players)
+
+    def display_available_players(self, players):
         self.player_tree.delete(*self.player_tree.get_children())
-        for player in self.my_player_board.players:
-            self.player_tree.insert('', 'end', values=(player[1], player[2], player[3], player[4], player[5], player[13]))
+        for player in players:
+            self.player_tree.insert('', 'end', values=(player.rank, player.name, player.team, player.bye, player.position, player.avg_adp))
+
+    def _recompute_recommendations(self):
+        if self.draft_order:
+            my_sim = Simulation(self.my_teams, self.my_player_board, self.draft_order)
+            self.recommended_player = my_sim.recommend_player_avoiding_cliffs(self.my_player_board.players, self.draft_order[0])
+            recommended_future_players = my_sim.recommend_future_players()
+            self.recommended_players_next_round = recommended_future_players[0]
+            self.recommended_players_two_rounds = recommended_future_players[1]
+        else:
+            # Draft is complete — nothing left to recommend
+            self.recommended_player = None
+            self.recommended_players_next_round = []
+            self.recommended_players_two_rounds = []
 
     def draft_selected_player(self):
         selected = self.player_tree.selection()
         if not selected:
             return
         player_values = self.player_tree.item(selected[0])['values']
-        player = self.my_db_table.find_player(player_values[1], player_values[2], player_values[4])
+        player = self.my_player_repository.find_player(player_values[1], player_values[2], player_values[4])
         if not player:
             return
-        player_id = player[0]
         drafting_team_name = self.draft_order[0]
         for team in self.my_teams:
             if team.team_name == drafting_team_name:
-                team.draft_player(player_id)
-                self.draft_selections.append([team.team_name, player[0], player[2]])
+                self.last_action = {
+                    'team': team,
+                    'player': player,
+                    'drafting_team_name': drafting_team_name,
+                    'pre_roster': list(team.roster),
+                    'pre_filled': list(team.filled_roster_positions),
+                    'pre_required': list(team.required_roster_positions),
+                }
+                team.draft_player(player.player_id)
+                self.draft_selections.append([team.team_name, player.player_id, player.name])
                 break
         del self.draft_order[0]
-        self.my_player_board = PlayerBoard(self.my_db_table)
-        my_sim = Simulation(self.my_teams, self.my_player_board, self.draft_order)
-        self.recommended_player = my_sim.recommend_player(self.my_player_board.players, self.draft_order[0])
-        recommended_future_players = my_sim.recommend_future_players()
-        self.recommended_players_next_round = recommended_future_players[0]
-        self.recommended_players_two_rounds = recommended_future_players[1]
+        self.my_player_board = PlayerBoard(self.my_player_repository)
+        self._recompute_recommendations()
+        self.undo_button.config(state='normal')
+        self.update_frames_content()
+
+    def undo_last_pick(self):
+        if self.last_action is None:
+            return
+        action = self.last_action
+        team = action['team']
+        team.roster = action['pre_roster']
+        team.filled_roster_positions = action['pre_filled']
+        team.required_roster_positions = action['pre_required']
+        self.my_player_repository.restore(action['player'])
+        self.draft_order.insert(0, action['drafting_team_name'])
+        self.draft_selections.pop()
+        self.my_player_board = PlayerBoard(self.my_player_repository)
+        self._recompute_recommendations()
+        self.last_action = None
+        self.undo_button.config(state='disabled')
         self.update_frames_content()
 
     def display_draft_history(self):
@@ -291,10 +333,10 @@ class DraftBoardFrame(tk.Frame):
     def display_recommendations(self):
         self.recommendations_tree.delete(*self.recommendations_tree.get_children())
         # Recommended pick
-        recommended = self.recommended_player[2] if self.recommended_player else ''
+        recommended = self.recommended_player.name if self.recommended_player else ''
         # Get lists for next pick and two picks
-        next_pick_list = [p[2] for p in self.recommended_players_next_round[:5]] if self.recommended_players_next_round else []
-        two_picks_list = [p[2] for p in self.recommended_players_two_rounds[:5]] if self.recommended_players_two_rounds else []
+        next_pick_list = [p.name for p in self.recommended_players_next_round[:5]] if self.recommended_players_next_round else []
+        two_picks_list = [p.name for p in self.recommended_players_two_rounds[:5]] if self.recommended_players_two_rounds else []
 
         # Find the max number of rows needed
         max_rows = max(1, len(next_pick_list), len(two_picks_list))
@@ -305,30 +347,10 @@ class DraftBoardFrame(tk.Frame):
             two_picks = two_picks_list[i] if i < len(two_picks_list) else ''
             self.recommendations_tree.insert('', 'end', values=(rec, next_pick, two_picks))
 
-    def show_all(self):
-        self.my_player_board.players = self.my_player_board.filter_all_players()
-        self.display_available_players()
+    def show_position(self, position_group):
+        self.current_position_filter = position_group
+        self.refresh_available_players_display()
 
-    def show_qbs(self):
-        self.my_player_board.players = self.my_player_board.filter_qbs()
-        self.display_available_players()
-
-    def show_rbs(self):
-        self.my_player_board.players = self.my_player_board.filter_rbs()
-        self.display_available_players()
-
-    def show_wrs(self):
-        self.my_player_board.players = self.my_player_board.filter_wrs()
-        self.display_available_players()
-
-    def show_tes(self):
-        self.my_player_board.players = self.my_player_board.filter_tes()
-        self.display_available_players()
-
-    def show_ks(self):
-        self.my_player_board.players = self.my_player_board.filter_ks()
-        self.display_available_players()
-
-    def show_dsts(self):
-        self.my_player_board.players = self.my_player_board.filter_dsts()
-        self.display_available_players()
+    def _on_search_changed(self, *args):
+        self.current_search_text = self.search_var.get()
+        self.refresh_available_players_display()
